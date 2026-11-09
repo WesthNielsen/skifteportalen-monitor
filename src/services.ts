@@ -6,16 +6,19 @@ import type { Notify, Snapshot, StateStore } from "./model.ts";
 
 export interface Config {
   webhookUrl: string;
-  redisUrl: string;
-  redisToken: string;
-  stateKey: string;
+  githubRepository: string;
+  githubToken: string;
 }
+
+const STATE_VARIABLE = "SKIFTEPORTAL_MONITOR_SNAPSHOT";
+const MAX_VARIABLE_BYTES = 48 * 1024;
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const webhook = z.url().safeParse(env.DISCORD_WEBHOOK_URL);
-  const redis = z.url().safeParse(env.UPSTASH_REDIS_REST_URL);
-  if (!webhook.success || !redis.success || !env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
-    throw new Error("Set DISCORD_WEBHOOK_URL, UPSTASH_REDIS_REST_URL, and UPSTASH_REDIS_REST_TOKEN");
+  const repository = z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u)
+    .safeParse(env.GITHUB_REPOSITORY);
+  if (!webhook.success || !repository.success || !env.GITHUB_TOKEN?.trim()) {
+    throw new Error("Set DISCORD_WEBHOOK_URL, GITHUB_REPOSITORY, and GITHUB_TOKEN");
   }
   const webhookUrl = new URL(webhook.data);
   if (webhookUrl.protocol !== "https:" ||
@@ -24,61 +27,76 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webhookUrl.username || webhookUrl.password || webhookUrl.port) {
     throw new Error("DISCORD_WEBHOOK_URL must be an HTTPS Discord webhook URL");
   }
-  const redisUrl = new URL(redis.data);
-  if (redisUrl.protocol !== "https:" || !redisUrl.hostname.endsWith(".upstash.io") ||
-    redisUrl.username || redisUrl.password || redisUrl.port ||
-    redisUrl.pathname !== "/" || redisUrl.search || redisUrl.hash) {
-    throw new Error("UPSTASH_REDIS_REST_URL must be an HTTPS Upstash REST origin");
-  }
-  const stateKey = env.STATE_KEY ?? "skifteportalen:monitor:v1";
-  if (!stateKey.trim()) throw new Error("STATE_KEY must not be empty");
   return {
     webhookUrl: webhook.data,
-    redisUrl: redisUrl.origin,
-    redisToken: env.UPSTASH_REDIS_REST_TOKEN.trim(),
-    stateKey,
+    githubRepository: repository.data,
+    githubToken: env.GITHUB_TOKEN.trim(),
   };
 }
 
 export function createStore(config: Config, fetcher: Fetch = globalThis.fetch): StateStore {
-  async function command(args: string[]): Promise<string | null> {
-    const response = await request(config.redisUrl, {
-      method: "POST",
+  const variablesUrl =
+    `https://api.github.com/repos/${config.githubRepository}/actions/variables`;
+  const variableUrl = `${variablesUrl}/${STATE_VARIABLE}`;
+
+  async function send(url: string, method: "GET" | "PATCH" | "POST", body?: string) {
+    return request(url, {
+      method,
       headers: {
-        Authorization: `Bearer ${config.redisToken}`,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.githubToken}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       },
-      body: JSON.stringify(args),
-    }, "Upstash", { fetch: fetcher });
-    let value: unknown;
-    try {
-      value = JSON.parse(response.body.toString("utf8"));
-    } catch {
-      throw new Error("Upstash returned invalid JSON");
-    }
-    const parsed = z.object({ result: z.string().nullable() }).safeParse(value);
-    if (!parsed.success) throw new Error("Upstash command failed or returned an invalid response");
-    return parsed.data.result;
+      ...(body === undefined ? {} : { body }),
+    }, "GitHub Actions variable", { fetch: fetcher, acceptedStatuses: [404] });
   }
+
+  function parseSnapshot(value: string): Snapshot {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(value);
+    } catch {
+      throw new Error("Stored snapshot is not valid JSON; baseline was not reset");
+    }
+    const parsed = snapshotSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new Error("Stored snapshot has an incompatible or corrupt format; baseline was not reset");
+    }
+    return parsed.data;
+  }
+
   return {
     async load() {
-      const value = await command(["GET", config.stateKey]);
-      if (value === null) return null;
+      const response = await send(variableUrl, "GET");
+      if (response.status === 404) return null;
       let raw: unknown;
       try {
-        raw = JSON.parse(value);
+        raw = JSON.parse(response.body.toString("utf8"));
       } catch {
-        throw new Error("Stored snapshot is not valid JSON; baseline was not reset");
+        throw new Error("GitHub returned an invalid Actions variable response");
       }
-      const parsed = snapshotSchema.safeParse(raw);
-      if (!parsed.success) {
-        throw new Error("Stored snapshot has an incompatible or corrupt format; baseline was not reset");
-      }
-      return parsed.data;
+      const variable = z.object({ value: z.string() }).safeParse(raw);
+      if (!variable.success) throw new Error("GitHub returned an invalid Actions variable response");
+      return variable.data.value ? parseSnapshot(variable.data.value) : null;
     },
     async save(snapshot: Snapshot) {
-      const result = await command(["SET", config.stateKey, JSON.stringify(snapshot)]);
-      if (result !== "OK") throw new Error("Upstash did not acknowledge the snapshot write");
+      const value = JSON.stringify(snapshot);
+      if (Buffer.byteLength(value, "utf8") > MAX_VARIABLE_BYTES) {
+        throw new Error("Monitor snapshot exceeds GitHub's 48 KB Actions variable limit");
+      }
+      const response = await send(variableUrl, "PATCH", JSON.stringify({ value }));
+      if (response.status === 404) {
+        const created = await send(variablesUrl, "POST", JSON.stringify({
+          name: STATE_VARIABLE,
+          value,
+        }));
+        if (created.status !== 201) {
+          throw new Error("GitHub did not acknowledge the Actions variable creation");
+        }
+      } else if (response.status !== 204) {
+        throw new Error("GitHub did not acknowledge the Actions variable update");
+      }
     },
   };
 }

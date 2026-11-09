@@ -9,56 +9,72 @@ import type { Snapshot } from "../src/model.ts";
 
 const env = {
   DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/123456/test-token",
-  UPSTASH_REDIS_REST_URL: "https://test-db.upstash.io",
-  UPSTASH_REDIS_REST_TOKEN: "test-write-token",
+  GITHUB_REPOSITORY: "owner/repo",
+  GITHUB_TOKEN: "test-write-token",
 };
 const config = readConfig(env);
 const stored: Snapshot = {
   version: 1,
   sourceUrl: SOURCE_URL,
-  checkedAt: "2026-11-09T07:00:00.000Z",
+  checkedAt: "2026-11-09T07:07:00.000Z",
   pageText: "API",
   resources: [{ url: "https://example.com/spec.yaml", label: "Spec", status: 200, hash: "a".repeat(64) }],
 };
+const variableUrl =
+  "https://api.github.com/repos/owner/repo/actions/variables/SKIFTEPORTAL_MONITOR_SNAPSHOT";
 
 test("validates required configuration and rejects wrong credential destinations", () => {
-  assert.equal(config.stateKey, "skifteportalen:monitor:v1");
   assert.throws(() => readConfig({}), /Set DISCORD/u);
   assert.throws(() => readConfig({ ...env, DISCORD_WEBHOOK_URL: "https://example.com/webhook" }),
     /HTTPS Discord/u);
-  assert.throws(() => readConfig({ ...env, UPSTASH_REDIS_REST_URL: "http://test.upstash.io" }),
-    /HTTPS Upstash/u);
-  assert.throws(() => readConfig({ ...env, STATE_KEY: " " }), /must not be empty/u);
+  assert.throws(() => readConfig({ ...env, GITHUB_REPOSITORY: "owner/repo/path" }), /Set DISCORD/u);
 });
 
-test("Upstash reads and writes authenticated JSON commands with no expiration", async () => {
-  const commands: unknown[] = [];
-  const store = createStore(config, async (_url, init) => {
+test("GitHub Actions variable store loads, creates and updates the current snapshot", async () => {
+  let persisted: string | null = null;
+  const calls: string[] = [];
+  const store = createStore(config, async (input, init) => {
     const headers = new Headers(init?.headers);
     assert.equal(headers.get("authorization"), "Bearer test-write-token");
-    const command: unknown = JSON.parse(String(init?.body));
-    commands.push(command);
-    return Response.json({ result: commands.length === 1 ? JSON.stringify(stored) : "OK" });
+    const url = String(input);
+    const method = init?.method;
+    calls.push(`${method} ${url}`);
+    if (method === "GET") {
+      return persisted === null ? new Response(null, { status: 404 }) : Response.json({ value: persisted });
+    }
+    if (method === "PATCH") {
+      if (persisted === null) return new Response(null, { status: 404 });
+      persisted = JSON.parse(String(init?.body)).value as string;
+      return new Response(null, { status: 204 });
+    }
+    persisted = JSON.parse(String(init?.body)).value as string;
+    return new Response(null, { status: 201 });
   });
-  assert.deepEqual(await store.load(), stored);
+  assert.equal(await store.load(), null);
   await store.save(stored);
-  assert.deepEqual(commands, [
-    ["GET", config.stateKey],
-    ["SET", config.stateKey, JSON.stringify(stored)],
+  assert.deepEqual(await store.load(), stored);
+  await store.save({ ...stored, checkedAt: "2026-11-10T07:07:00.000Z" });
+  assert.deepEqual(calls, [
+    `GET ${variableUrl}`,
+    `PATCH ${variableUrl}`,
+    "POST https://api.github.com/repos/owner/repo/actions/variables",
+    `GET ${variableUrl}`,
+    `PATCH ${variableUrl}`,
   ]);
 });
 
-test("only missing Redis keys initialize; corrupt, incompatible and error responses fail", async () => {
-  assert.equal(await createStore(config, async () => Response.json({ result: null })).load(), null);
-  for (const result of ["", "not-json", "{}", JSON.stringify({ ...stored, version: 2 }),
+test("only missing GitHub variables initialize; corrupt, incompatible and error responses fail", async () => {
+  assert.equal(await createStore(config, async () => new Response(null, { status: 404 })).load(), null);
+  assert.equal(await createStore(config, async () => Response.json({ value: "" })).load(), null);
+  for (const value of ["not-json", "{}", JSON.stringify({ ...stored, version: 2 }),
     JSON.stringify({ ...stored, resources: [{ ...stored.resources[0], status: 200, hash: null }] })]) {
-    await assert.rejects(createStore(config, async () => Response.json({ result })).load(),
+    await assert.rejects(createStore(config, async () => Response.json({ value })).load(),
       /Stored snapshot/u);
   }
   await assert.rejects(createStore(config, async () => Response.json({ error: "ERR" })).load(),
-    /command failed/u);
-  await assert.rejects(createStore(config, async () => Response.json({ result: null })).save(stored),
-    /acknowledge/u);
+    /invalid Actions variable response/u);
+  await assert.rejects(createStore(config, async () => new Response(null, { status: 403 })).load(),
+    /HTTP 403/u);
 });
 
 test("Discord waits for acknowledgement, disables mentions and suppresses link embeds", async () => {
@@ -139,17 +155,25 @@ test("network failures never disclose secret URLs and oversized bodies are rejec
   assert.equal(retryDelay(null, 1), 2000);
 });
 
-test("full workflow survives fresh store instances and alerts on same-URL spec replacement", async () => {
+test("full workflow persists in GitHub and alerts on same-URL spec replacement", async () => {
   let persisted: string | null = null;
   let spec = "openapi: 3.0.0\ninfo:\n  version: 1.0.0";
   const deliveries: string[] = [];
   const fetcher: Fetch = async (input, init) => {
     const url = String(input);
-    if (url === config.redisUrl) {
-      const command: string[] = JSON.parse(String(init?.body));
-      if (command[0] === "GET") return Response.json({ result: persisted });
-      persisted = command[2] ?? null;
-      return Response.json({ result: "OK" });
+    if (url.includes("/actions/variables")) {
+      if (init?.method === "GET") {
+        return persisted === null
+          ? new Response(null, { status: 404 })
+          : Response.json({ value: persisted });
+      }
+      if (init?.method === "PATCH") {
+        if (persisted === null) return new Response(null, { status: 404 });
+        persisted = JSON.parse(String(init.body)).value as string;
+        return new Response(null, { status: 204 });
+      }
+      persisted = JSON.parse(String(init?.body)).value as string;
+      return new Response(null, { status: 201 });
     }
     if (url.startsWith(config.webhookUrl)) {
       const message: { content: string } = JSON.parse(String(init?.body));

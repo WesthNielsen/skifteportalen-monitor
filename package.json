@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Daily Skifteportalen API documentation change monitor for Render.",
+  "description": "Daily Skifteportalen API documentation change monitor for GitHub Actions.",
   "packageManager": "bun@1.4.2",
   "engines": {
     "bun": ">=1.4.2"

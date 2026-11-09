@@ -1,6 +1,6 @@
 # Skifteportalen API change monitor
 
-A once-daily Render cron job that sends Discord notifications when Skifteportalen's
+A once-daily GitHub Actions job that sends Discord notifications when Skifteportalen's
 [API documentation page](https://domstoldk.euwest01.umbraco.io/selvbetjening/blanketter-og-vejledninger/minskiftesagdk/api-tilslutning-til-skifteportalen/)
 or its linked documents change.
 
@@ -17,86 +17,66 @@ The first successful run sends a setup confirmation and establishes the baseline
 Unchanged runs send nothing. Update alerts include document links and a bounded
 article diff; they do not perform semantic OpenAPI compatibility analysis.
 
-## Deploy on Render
+## Run on GitHub Actions
 
-1. Push this project to a Git repository connected to Render.
-2. Follow [Set up Upstash Redis](#set-up-upstash-redis) below to create a free database
-   and obtain its REST credentials.
-3. In Discord, create a channel webhook under **Edit Channel → Integrations → Webhooks**.
-4. Create a Render **Blueprint** from this repository. [render.yaml](./render.yaml)
-   defines the cron job and prompts for:
+The workflow in [monitor.yml](./.github/workflows/monitor.yml) runs daily at
+**07:07 UTC** (08:07 CET in winter, 09:07 CEST in summer) and can also be started
+manually from the repository's **Actions** tab. GitHub scheduled workflows use
+UTC and may be delayed during busy periods, so this is not an exact-time alerting
+service.
 
-   | Variable | Value |
+1. Push this project to a GitHub repository. A public repository is eligible for
+   free standard GitHub-hosted runner usage.
+2. In Discord, create a channel webhook under **Edit Channel → Integrations →
+   Webhooks**.
+3. In the repository, open **Settings → Secrets and variables → Actions** and
+   add this **repository secret**:
+
+   | Secret name | Value |
    | --- | --- |
-   | `DISCORD_WEBHOOK_URL` | Discord webhook URL (secret) |
-   | `UPSTASH_REDIS_REST_URL` | `https://YOUR_DATABASE.upstash.io` |
-   | `UPSTASH_REDIS_REST_TOKEN` | Upstash read/write REST token (secret) |
+   | `DISCORD_WEBHOOK_URL` | Discord webhook URL |
 
-5. Deploy, then use **Trigger Run** to verify the initial Discord message.
-   Check Render logs for `Skifteportalen monitor: initialized`.
+   Never put the secret values in workflow files, source code, or commits.
+4. In **Settings → Actions → General**, make sure workflows are allowed to run.
+   The workflow grants its `GITHUB_TOKEN` write access to Actions variables so
+   it can store the current baseline. Protect the default branch and only merge
+   trusted workflow changes: anyone able to modify and run the workflow could
+   potentially expose its secrets.
+5. Open **Actions → Skifteportalen monitor → Run workflow** to verify the setup.
+   The first successful run sends a setup confirmation and establishes the
+   baseline. Check the run's logs for `Skifteportalen monitor: initialized`.
+   The workflow creates the `SKIFTEPORTAL_MONITOR_SNAPSHOT` repository variable
+   automatically.
 
-The schedule is **`0 7 * * *` (07:00 UTC)**: 08:00 CET in winter and
-09:00 CEST in summer. This is intentionally fixed UTC, not daylight-saving-aware.
-Render supplies a single-run guarantee for each cron service; deploy only one
-job per `STATE_KEY`.
+Once the Actions workflow is verified, disable or delete the old Render cron
+service to avoid duplicate alerts. The workflow serializes its own scheduled
+and manual runs.
 
-### Set up Upstash Redis
+### State storage and cost
 
-1. Sign in or create an account at the [Upstash Console](https://console.upstash.com/redis).
-2. On the **Redis** tab, choose **Create Database**. Name it, for example,
-   `skifteportalen-monitor`.
-3. Choose a primary region close to the Render job's **Frankfurt** region
-   (prefer Frankfurt if available). A single region is sufficient for this job.
-4. Continue to the plan selection, choose **Free**, and create the database.
-   No paid plan or additional read regions are needed.
-5. Open the database details and find the **REST API** connection section.
-   Copy the values named `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
-   Use the **read/write token**, not the read-only token. The URL must look like
-   `https://YOUR_DATABASE.upstash.io`, not a `redis://` or `rediss://` address.
-6. Enter these values as environment variables when Render's Blueprint prompts
-   for them. For local runs, put them in `.env` using [.env.example](./.env.example)
-   as the template. Do not paste credentials into source code or commit `.env`.
-7. Leave `STATE_KEY` at `skifteportalen:monitor:v1` unless you need a separate
-   baseline. No tables, migrations, manual keys, or Upstash SDK installation
-   are required: the job uses Upstash's REST API.
-8. Trigger the Render job once. After the Discord initialization message arrives,
-   open Upstash's **Data Browser** and find `skifteportalen:monitor:v1`.
-   It should contain a JSON snapshot with no expiry. Trigger the job again;
-   if the source has not changed, it should log `unchanged` and send no message.
+The current comparison baseline is stored in the repository's GitHub Actions
+variable named `SKIFTEPORTAL_MONITOR_SNAPSHOT`. The workflow creates it on the
+first successful run and overwrites it only after notifying about a change.
+It is a single current snapshot, not a history table; it contains the public
+article text, document URLs, hashes, statuses and check time, but no credentials
+or downloaded document bodies. The current snapshot is about 25.6 KB; GitHub
+limits an Actions variable to 48 KB. The monitor fails clearly rather than
+silently truncating the baseline if it ever exceeds that limit.
 
-If initialization fails, inspect the Render logs: HTTP 401 usually indicates an
-incorrect REST token; a write failure can indicate a read-only token. Verify that
-the REST URL and token belong to the same database. Do not delete the snapshot key
-unless you intentionally want to reset the baseline. This database holds durable
-monitor state, not disposable cache data; keep automatic eviction disabled.
+Delete the variable in **Settings → Secrets and variables → Actions → Variables**
+only if you intentionally want to reset the baseline. No external database,
+artifact retention, personal access token or manual state setup is needed by
+the hosted workflow.
 
-See Upstash's [getting-started guide](https://upstash.com/docs/redis/overall/getstarted)
-for the current console workflow.
-
-### Persistence and cost
-
-Render cron jobs cannot use persistent disks; local files disappear between runs.
-The last successful snapshot is therefore stored as a single Redis key with
-**no expiry**, independent of deployments. Only article text, URLs, document hashes,
-statuses and the snapshot timestamp are stored, not entire document bodies.
-The optional `STATE_KEY` defaults to `skifteportalen:monitor:v1`; use a different key
-for an independent monitor. Deleting the key deliberately resets the baseline.
-
-[Upstash's free plan](https://upstash.com/pricing/redis) currently includes 250 MB
-and 500,000 commands/month. This monitor normally needs about 30 GETs/month plus
-one SET per changed run, well within that allowance. Confirm current provider terms
-and database retention/eviction settings before deployment.
-[Neon PostgreSQL](https://neon.com/pricing) is another free persistence option,
-but is not needed by this implementation.
-
-**Render cron compute is not free**: Render documents a $1/month minimum per cron
-service, plus usage. There is no paid Render database requirement.
+Standard GitHub-hosted runners are free for public repositories. Check GitHub's
+[Actions billing documentation](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+for current terms.
 
 ### Failure behavior
 
 - Network requests time out after 30 seconds; downloads are capped at 15 MiB each.
-  Safe reads and idempotent Redis commands retry up to three times on network
-  failures, HTTP 429 or 5xx. Documents are fetched sequentially.
+  Safe reads and idempotent GitHub variable operations retry up to three times on
+  network failures, HTTP 429 or 5xx. Documents are fetched sequentially.
 - Linked documents returning 404/410 are recorded and reported, including those
   already unavailable on initialization. Other download failures, empty/HTML
   document responses, missing article/spec sections and corrupt stored state fail
@@ -105,20 +85,20 @@ service, plus usage. There is no paid Render database requirement.
   rate limits are retried; ambiguous network/server errors are not immediately
   retried because the message may already have arrived.
 - Delivery is **at least once**, not exactly once. Partial delivery, interruption
-  or a failed Redis write after delivery can cause duplicate alerts next run.
-- Failures exit nonzero, appear in Render logs, and attempt a Discord failure alert
-  when configuration is valid. Configure Render's failure notifications too,
-  since Discord/Upstash outages or invalid credentials can prevent that alert.
+  or a failed baseline update after delivery can cause duplicate alerts next run.
+- Failures exit nonzero and appear in the GitHub Actions run logs; the job also
+  attempts a Discord failure alert when configuration is valid. Discord outages
+  or invalid credentials can prevent that alert.
 - Discord mentions are disabled, link embeds are suppressed, and long messages
   are split below Discord's 2,000-character limit.
 
-Keep tokens in Render environment variables. Never commit a populated `.env`.
+Keep tokens in GitHub Actions secrets (or local environment variables). Never
+commit a populated `.env`.
 
 ## Local development
 
-Requires [Bun](https://bun.sh/) 1.4.2 or newer. Render pins Bun 1.4.2 via
-`BUN_VERSION` while keeping `runtime: node`, Render's native JavaScript environment.
-Node.js and npm are not required for local development.
+Requires [Bun](https://bun.sh/) 1.4.2 or newer. The GitHub Actions workflow pins
+Bun 1.4.2. Node.js and npm are not required for local development.
 
 ```sh
 bun install --frozen-lockfile
@@ -128,7 +108,8 @@ bun run build
 ```
 
 Commit [bun.lock](./bun.lock) alongside dependency changes. Use `bun add` or
-`bun add --dev` to update dependencies; Render installs from the frozen lockfile.
+`bun add --dev` to update dependencies; GitHub Actions installs from the frozen
+lockfile.
 
 Check the real page and every linked document without credentials, state writes,
 or Discord messages:
@@ -137,8 +118,9 @@ or Discord messages:
 bun run check:live
 ```
 
-To run the actual monitor, copy [.env.example](./.env.example) to `.env`, populate
-the three credentials, build, and run:
+To run the actual monitor locally, copy [.env.example](./.env.example) to `.env`,
+set the Discord webhook, repository name and a fine-grained GitHub token scoped
+to that repository with **Actions: read and write** permission, then build and run:
 
 ```sh
 bun run start
@@ -146,4 +128,4 @@ bun run start
 
 Bun automatically loads the local `.env` file. Tests run with Bun's test runner
 using its `node:test` compatibility, fake HTTP responses, and an in-memory store;
-they never send real Discord messages or require database credentials.
+they never send real Discord messages or require GitHub credentials.

@@ -163,7 +163,7 @@ export async function runMonitor(
     );
     await notify(splitMessages([
       "Skifteportalen monitor initialized.",
-      `Watching the article and ${current.resources.length} linked documents. Daily at 07:00 UTC.`,
+      `Watching the article and ${current.resources.length} linked documents. Daily at 07:07 UTC.`,
       `<${SOURCE_URL}>`,
       ...warnings,
     ].join("\n\n")));
