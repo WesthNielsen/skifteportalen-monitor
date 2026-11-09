@@ -48,6 +48,7 @@ export async function request(
     sleep?: Sleep;
     retry?: boolean;
     acceptedStatuses?: number[];
+    errorDetails?: (status: number, body: Buffer) => string | undefined;
   } = {},
 ): Promise<HttpResult> {
   const fetcher = options.fetch ?? globalThis.fetch;
@@ -77,7 +78,8 @@ export async function request(
       await pause(retryDelay(response.headers.get("retry-after"), attempt));
       continue;
     }
-    throw new Error(`${label}: HTTP ${response.status}`);
+    const details = options.errorDetails?.(response.status, body);
+    throw new Error(`${label}: HTTP ${response.status}${details ? ` — ${details}` : ""}`);
   }
   throw new Error(`${label}: retries exhausted`);
 }

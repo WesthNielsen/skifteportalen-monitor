@@ -13,6 +13,22 @@ export interface Config {
 const STATE_VARIABLE = "SKIFTEPORTAL_MONITOR_SNAPSHOT";
 const MAX_VARIABLE_BYTES = 48 * 1024;
 
+function githubErrorDetails(body: Buffer, token: string): string | undefined {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(body.toString("utf8"));
+  } catch {
+    return undefined;
+  }
+  const parsed = z.object({ message: z.string() }).safeParse(raw);
+  if (!parsed.success) return undefined;
+  const message = parsed.data.message
+    .replaceAll(token, "[REDACTED]")
+    .replace(/[\r\n\t]+/gu, " ")
+    .slice(0, 500);
+  return message ? message : undefined;
+}
+
 export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const webhook = z.url().safeParse(env.DISCORD_WEBHOOK_URL);
   const repository = z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u)
@@ -49,7 +65,11 @@ export function createStore(config: Config, fetcher: Fetch = globalThis.fetch): 
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       },
       ...(body === undefined ? {} : { body }),
-    }, "GitHub Actions variable", { fetch: fetcher, acceptedStatuses: [404] });
+    }, "GitHub Actions variable", {
+      fetch: fetcher,
+      acceptedStatuses: [404],
+      errorDetails: (_status, responseBody) => githubErrorDetails(responseBody, config.githubToken),
+    });
   }
 
   function parseSnapshot(value: string): Snapshot {

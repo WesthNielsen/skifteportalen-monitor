@@ -73,8 +73,16 @@ test("only missing GitHub variables initialize; corrupt, incompatible and error 
   }
   await assert.rejects(createStore(config, async () => Response.json({ error: "ERR" })).load(),
     /invalid Actions variable response/u);
-  await assert.rejects(createStore(config, async () => new Response(null, { status: 403 })).load(),
-    /HTTP 403/u);
+  await assert.rejects(createStore(config, async () => Response.json({
+    message: "Resource not accessible by integration",
+  }, { status: 403 })).load(), /HTTP 403 — Resource not accessible by integration/u);
+  await assert.rejects(createStore(config, async () => Response.json({
+    message: "token test-write-token should not appear",
+  }, { status: 403 })).load(), (error: Error) => {
+    assert.match(error.message, /\[REDACTED\]/u);
+    assert.doesNotMatch(error.message, /test-write-token/u);
+    return true;
+  });
 });
 
 test("Discord waits for acknowledgement, disables mentions and suppresses link embeds", async () => {
