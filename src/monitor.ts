@@ -167,11 +167,14 @@ export async function runMonitor(
       `<${SOURCE_URL}>`,
       ...warnings,
     ].join("\n\n")));
-    await store.save(current);
+    await store.save({ ...current, lastChangedAt: null });
     return "initialized";
   }
   const changes = describeChanges(previous, current);
-  if (changes.length === 0) return "unchanged";
+  if (changes.length === 0) {
+    await store.save({ ...current, lastChangedAt: previous.lastChangedAt ?? null });
+    return "unchanged";
+  }
   await notify(splitMessages([
     "Skifteportalen update detected",
     `Compared with ${previous.checkedAt}`,
@@ -179,6 +182,6 @@ export async function runMonitor(
     ...changes,
   ].join("\n\n")));
   // Only advance after every notification succeeds, so failures are retried next run.
-  await store.save(current);
+  await store.save({ ...current, lastChangedAt: current.checkedAt });
   return "changed";
 }

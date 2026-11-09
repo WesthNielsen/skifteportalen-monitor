@@ -145,12 +145,12 @@ test("first run sends initialization then persists, subsequent unchanged run sta
     delivered.push(...messages);
   }), "initialized");
   assert.match(delivered.join("\n"), /initialized/u);
-  assert.deepEqual(initial.saved, [current]);
+  assert.deepEqual(initial.saved, [{ ...current, lastChangedAt: null }]);
   const existing = memoryStore(current);
   assert.equal(await runMonitor(existing, async () => current, async () => {
     assert.fail("Unchanged run must not notify");
   }), "unchanged");
-  assert.equal(existing.saved.length, 0);
+  assert.deepEqual(existing.saved, [{ ...current, lastChangedAt: null }]);
 });
 
 test("changes persist only after successful delivery and notification failures keep baseline", async () => {
@@ -163,7 +163,37 @@ test("changes persist only after successful delivery and notification failures k
   assert.equal(await runMonitor(store, async () => changed, async () => {
     assert.equal(store.saved.length, 0);
   }), "changed");
-  assert.deepEqual(store.saved, [changed]);
+  assert.deepEqual(store.saved, [{ ...changed, lastChangedAt: changed.checkedAt }]);
+});
+
+test("unchanged checks advance checkedAt and preserve the last content change date", async () => {
+  const previous = snapshot({ lastChangedAt: "2026-11-08T07:07:00.000Z" });
+  const current = snapshot({ checkedAt: "2026-11-10T07:07:00.000Z" });
+  const store = memoryStore(previous);
+  assert.equal(await runMonitor(store, async () => current, async () => {
+    assert.fail("Heartbeat must not notify");
+  }), "unchanged");
+  assert.deepEqual(store.saved, [{ ...current, lastChangedAt: previous.lastChangedAt }]);
+});
+
+test("detected changes replace lastChangedAt only after notification succeeds", async () => {
+  const store = memoryStore(snapshot({ lastChangedAt: "2026-11-08T07:07:00.000Z" }));
+  const current = snapshot({
+    checkedAt: "2026-11-10T07:07:00.000Z",
+    pageText: "New release",
+  });
+  assert.equal(await runMonitor(store, async () => current, async () => {
+    assert.equal(store.saved.length, 0);
+  }), "changed");
+  assert.deepEqual(store.saved, [{ ...current, lastChangedAt: current.checkedAt }]);
+});
+
+test("failed heartbeat writes fail the run without sending a change notification", async () => {
+  await assert.rejects(runMonitor({
+    load: async () => snapshot(),
+    save: async () => { throw new Error("Heartbeat write failed"); },
+  }, async () => snapshot({ checkedAt: "2026-11-10T07:07:00.000Z" }),
+  async () => { assert.fail("Unchanged run must not notify"); }), /Heartbeat write failed/u);
 });
 
 test("collection/storage failures do not produce success-shaped results or notifications", async () => {

@@ -14,6 +14,7 @@ export const snapshotSchema = z.object({
   version: z.literal(1),
   sourceUrl: z.literal(SOURCE_URL),
   checkedAt: z.iso.datetime(),
+  lastChangedAt: z.iso.datetime().nullable().optional(),
   pageText: z.string().min(1),
   resources: z.array(resourceSchema).min(1),
 }).refine((snapshot) =>

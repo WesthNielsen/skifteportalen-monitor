@@ -57,7 +57,17 @@ and manual runs.
 The current comparison baseline is stored at
 `.monitor-state/snapshot.json` on a dedicated `monitor-state` branch. The
 workflow creates the branch and file on its first successful run, then commits
-an updated snapshot only after notifying about a change. It is one current
+an updated snapshot on every successful check, even when nothing changes.
+`checkedAt` records the latest successful check; `lastChangedAt` records when
+the monitor last detected a content change. It is `null` until a change is
+observed, including for existing snapshots without this field. Unchanged checks
+preserve `lastChangedAt` and do not send Discord notifications. Failed checks
+do not advance either timestamp.
+
+These commits provide a visible heartbeat, but are not a guarantee against
+GitHub's public-repository inactivity policy.
+
+It is one current
 snapshot file, not a history table; Git retains earlier versions in that
 branch's commit history. The snapshot contains the public article text,
 document URLs, hashes, statuses and check time, but no credentials or downloaded
