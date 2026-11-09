@@ -11,6 +11,7 @@ const env = {
   DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/123456/test-token",
   GITHUB_REPOSITORY: "owner/repo",
   MONITOR_GITHUB_TOKEN: "test-write-token",
+  MONITOR_BASE_SHA: "b".repeat(40),
 };
 const config = readConfig(env);
 const stored: Snapshot = {
@@ -20,18 +21,19 @@ const stored: Snapshot = {
   pageText: "API",
   resources: [{ url: "https://example.com/spec.yaml", label: "Spec", status: 200, hash: "a".repeat(64) }],
 };
-const variableUrl =
-  "https://api.github.com/repos/owner/repo/actions/variables/SKIFTEPORTAL_MONITOR_SNAPSHOT";
+const stateUrl = "https://api.github.com/repos/owner/repo/contents/.monitor-state/snapshot.json";
 
 test("validates required configuration and rejects wrong credential destinations", () => {
   assert.throws(() => readConfig({}), /Set DISCORD/u);
   assert.throws(() => readConfig({ ...env, DISCORD_WEBHOOK_URL: "https://example.com/webhook" }),
     /HTTPS Discord/u);
   assert.throws(() => readConfig({ ...env, GITHUB_REPOSITORY: "owner/repo/path" }), /Set DISCORD/u);
+  assert.throws(() => readConfig({ ...env, MONITOR_BASE_SHA: "invalid" }), /Set DISCORD/u);
 });
 
-test("GitHub Actions variable store loads, creates and updates the current snapshot", async () => {
+test("GitHub state branch store loads, creates and updates the current snapshot", async () => {
   let persisted: string | null = null;
+  let branchExists = false;
   const calls: string[] = [];
   const store = createStore(config, async (input, init) => {
     const headers = new Headers(init?.headers);
@@ -39,40 +41,57 @@ test("GitHub Actions variable store loads, creates and updates the current snaps
     const url = String(input);
     const method = init?.method;
     calls.push(`${method} ${url}`);
-    if (method === "GET") {
-      return persisted === null ? new Response(null, { status: 404 }) : Response.json({ value: persisted });
+    if (url.endsWith("/git/ref/heads/monitor-state") && method === "GET") {
+      return branchExists ? Response.json({ ref: "refs/heads/monitor-state" })
+        : new Response(null, { status: 404 });
     }
-    if (method === "PATCH") {
-      if (persisted === null) return new Response(null, { status: 404 });
-      persisted = JSON.parse(String(init?.body)).value as string;
-      return new Response(null, { status: 204 });
+    if (url.endsWith("/git/refs") && method === "POST") {
+      branchExists = true;
+      return new Response(null, { status: 201 });
     }
-    persisted = JSON.parse(String(init?.body)).value as string;
-    return new Response(null, { status: 201 });
+    if (url.startsWith(stateUrl) && method === "GET") {
+      return persisted === null ? new Response(null, { status: 404 }) : Response.json({
+        sha: "blob-sha",
+        content: Buffer.from(persisted).toString("base64"),
+        encoding: "base64",
+      });
+    }
+    if (url === stateUrl && method === "PUT") {
+      persisted = Buffer.from(JSON.parse(String(init?.body)).content as string, "base64").toString("utf8");
+      return new Response(null, { status: calls.filter((call) => call.startsWith("PUT ")).length === 1 ? 201 : 200 });
+    }
+    throw new Error(`Unexpected request: ${method} ${url}`);
   });
   assert.equal(await store.load(), null);
   await store.save(stored);
   assert.deepEqual(await store.load(), stored);
   await store.save({ ...stored, checkedAt: "2026-11-10T07:07:00.000Z" });
   assert.deepEqual(calls, [
-    `GET ${variableUrl}`,
-    `PATCH ${variableUrl}`,
-    "POST https://api.github.com/repos/owner/repo/actions/variables",
-    `GET ${variableUrl}`,
-    `PATCH ${variableUrl}`,
+    `GET ${stateUrl}?ref=monitor-state`,
+    "GET https://api.github.com/repos/owner/repo/git/ref/heads/monitor-state",
+    "POST https://api.github.com/repos/owner/repo/git/refs",
+    `GET ${stateUrl}?ref=monitor-state`,
+    `PUT ${stateUrl}`,
+    `GET ${stateUrl}?ref=monitor-state`,
+    "GET https://api.github.com/repos/owner/repo/git/ref/heads/monitor-state",
+    `GET ${stateUrl}?ref=monitor-state`,
+    `PUT ${stateUrl}`,
   ]);
 });
 
-test("only missing GitHub variables initialize; corrupt, incompatible and error responses fail", async () => {
+test("only missing state files initialize; corrupt, incompatible and error responses fail", async () => {
   assert.equal(await createStore(config, async () => new Response(null, { status: 404 })).load(), null);
-  assert.equal(await createStore(config, async () => Response.json({ value: "" })).load(), null);
   for (const value of ["not-json", "{}", JSON.stringify({ ...stored, version: 2 }),
     JSON.stringify({ ...stored, resources: [{ ...stored.resources[0], status: 200, hash: null }] })]) {
-    await assert.rejects(createStore(config, async () => Response.json({ value })).load(),
+    await assert.rejects(createStore(config, async () => Response.json({
+      sha: "blob-sha",
+      content: Buffer.from(value).toString("base64"),
+      encoding: "base64",
+    })).load(),
       /Stored snapshot/u);
   }
   await assert.rejects(createStore(config, async () => Response.json({ error: "ERR" })).load(),
-    /invalid Actions variable response/u);
+    /invalid state file response/u);
   await assert.rejects(createStore(config, async () => Response.json({
     message: "Resource not accessible by integration",
   }, { status: 403 })).load(), /HTTP 403 — Resource not accessible by integration/u);
@@ -163,25 +182,31 @@ test("network failures never disclose secret URLs and oversized bodies are rejec
   assert.equal(retryDelay(null, 1), 2000);
 });
 
-test("full workflow persists in GitHub and alerts on same-URL spec replacement", async () => {
+test("full workflow persists on a GitHub state branch and alerts on same-URL spec replacement", async () => {
   let persisted: string | null = null;
+  let branchExists = false;
   let spec = "openapi: 3.0.0\ninfo:\n  version: 1.0.0";
   const deliveries: string[] = [];
   const fetcher: Fetch = async (input, init) => {
     const url = String(input);
-    if (url.includes("/actions/variables")) {
-      if (init?.method === "GET") {
-        return persisted === null
-          ? new Response(null, { status: 404 })
-          : Response.json({ value: persisted });
-      }
-      if (init?.method === "PATCH") {
-        if (persisted === null) return new Response(null, { status: 404 });
-        persisted = JSON.parse(String(init.body)).value as string;
-        return new Response(null, { status: 204 });
-      }
-      persisted = JSON.parse(String(init?.body)).value as string;
+    if (url.endsWith("/git/ref/heads/monitor-state") && init?.method === "GET") {
+      return branchExists ? Response.json({ ref: "refs/heads/monitor-state" })
+        : new Response(null, { status: 404 });
+    }
+    if (url.endsWith("/git/refs") && init?.method === "POST") {
+      branchExists = true;
       return new Response(null, { status: 201 });
+    }
+    if (url.startsWith(stateUrl) && init?.method === "GET") {
+      return persisted === null ? new Response(null, { status: 404 }) : Response.json({
+        sha: "blob-sha",
+        content: Buffer.from(persisted).toString("base64"),
+        encoding: "base64",
+      });
+    }
+    if (url === stateUrl && init?.method === "PUT") {
+      persisted = Buffer.from(JSON.parse(String(init.body)).content as string, "base64").toString("utf8");
+      return new Response(null, { status: persisted ? 200 : 201 });
     }
     if (url.startsWith(config.webhookUrl)) {
       const message: { content: string } = JSON.parse(String(init?.body));

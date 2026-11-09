@@ -38,14 +38,14 @@ service.
 
    Never put the secret values in workflow files, source code, or commits.
 4. In **Settings → Actions → General**, make sure workflows are allowed to run.
-   The workflow grants its `GITHUB_TOKEN` write access to Actions variables so
-   it can store the current baseline. Protect the default branch and only merge
+   The workflow grants its `GITHUB_TOKEN` write access to repository contents so
+   it can maintain the state branch. Protect the default branch and only merge
    trusted workflow changes: anyone able to modify and run the workflow could
    potentially expose its secrets.
 5. Open **Actions → Skifteportalen monitor → Run workflow** to verify the setup.
    The first successful run sends a setup confirmation and establishes the
    baseline. Check the run's logs for `Skifteportalen monitor: initialized`.
-   The workflow creates the `SKIFTEPORTAL_MONITOR_SNAPSHOT` repository variable
+   The workflow creates the `monitor-state` branch and snapshot file
    automatically.
 
 Once the Actions workflow is verified, disable or delete the old Render cron
@@ -54,19 +54,20 @@ and manual runs.
 
 ### State storage and cost
 
-The current comparison baseline is stored in the repository's GitHub Actions
-variable named `SKIFTEPORTAL_MONITOR_SNAPSHOT`. The workflow creates it on the
-first successful run and overwrites it only after notifying about a change.
-It is a single current snapshot, not a history table; it contains the public
-article text, document URLs, hashes, statuses and check time, but no credentials
-or downloaded document bodies. The current snapshot is about 25.6 KB; GitHub
-limits an Actions variable to 48 KB. The monitor fails clearly rather than
-silently truncating the baseline if it ever exceeds that limit.
+The current comparison baseline is stored at
+`.monitor-state/snapshot.json` on a dedicated `monitor-state` branch. The
+workflow creates the branch and file on its first successful run, then commits
+an updated snapshot only after notifying about a change. It is one current
+snapshot file, not a history table; Git retains earlier versions in that
+branch's commit history. The snapshot contains the public article text,
+document URLs, hashes, statuses and check time, but no credentials or downloaded
+document bodies. Its size is capped below GitHub's 1 MB Contents API response
+limit. Delete the `monitor-state` branch only if you intentionally want to reset
+the baseline.
 
-Delete the variable in **Settings → Secrets and variables → Actions → Variables**
-only if you intentionally want to reset the baseline. No external database,
-artifact retention, personal access token or manual state setup is needed by
-the hosted workflow.
+The hosted workflow uses GitHub's automatically provided `GITHUB_TOKEN` with
+`contents: write`; no personal access token, external database, Actions
+variable, or artifact retention is needed.
 
 Standard GitHub-hosted runners are free for public repositories. Check GitHub's
 [Actions billing documentation](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
@@ -75,8 +76,9 @@ for current terms.
 ### Failure behavior
 
 - Network requests time out after 30 seconds; downloads are capped at 15 MiB each.
-  Safe reads and idempotent GitHub variable operations retry up to three times on
-  network failures, HTTP 429 or 5xx. Documents are fetched sequentially.
+  Safe reads retry up to three times on network failures, HTTP 429 or 5xx.
+  State writes are not retried automatically to avoid duplicate or conflicting
+  commits. Documents are fetched sequentially.
 - Linked documents returning 404/410 are recorded and reported, including those
   already unavailable on initialization. Other download failures, empty/HTML
   document responses, missing article/spec sections and corrupt stored state fail
@@ -119,9 +121,10 @@ bun run check:live
 ```
 
 To run the actual monitor locally, copy [.env.example](./.env.example) to `.env`,
-set the Discord webhook, repository name and a fine-grained GitHub token scoped
-to that repository with **Actions: read and write** permission as
-`MONITOR_GITHUB_TOKEN`, then build and run:
+set the Discord webhook and repository name, and provide a fine-grained GitHub
+token scoped to that repository with **Contents: read and write** permission as
+`MONITOR_GITHUB_TOKEN`. Set `MONITOR_BASE_SHA` to a commit SHA from
+`git rev-parse HEAD`, then build and run:
 
 ```sh
 bun run start

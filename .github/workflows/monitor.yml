@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: read
+  contents: write
 
 concurrency:
   group: skifteportalen-monitor
@@ -37,3 +36,4 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           MONITOR_GITHUB_TOKEN: ${{ github.token }}
+          MONITOR_BASE_SHA: ${{ github.sha }}
