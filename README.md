@@ -120,7 +120,8 @@ bun run check:live
 
 To run the actual monitor locally, copy [.env.example](./.env.example) to `.env`,
 set the Discord webhook, repository name and a fine-grained GitHub token scoped
-to that repository with **Actions: read and write** permission, then build and run:
+to that repository with **Actions: read and write** permission as
+`MONITOR_GITHUB_TOKEN`, then build and run:
 
 ```sh
 bun run start

@@ -36,4 +36,4 @@ jobs:
         run: bun run start
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          GITHUB_TOKEN: ${{ github.token }}
+          MONITOR_GITHUB_TOKEN: ${{ github.token }}

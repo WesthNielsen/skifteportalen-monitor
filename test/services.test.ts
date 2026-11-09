@@ -10,7 +10,7 @@ import type { Snapshot } from "../src/model.ts";
 const env = {
   DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/123456/test-token",
   GITHUB_REPOSITORY: "owner/repo",
-  GITHUB_TOKEN: "test-write-token",
+  MONITOR_GITHUB_TOKEN: "test-write-token",
 };
 const config = readConfig(env);
 const stored: Snapshot = {

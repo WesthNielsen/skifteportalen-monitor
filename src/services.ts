@@ -17,8 +17,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const webhook = z.url().safeParse(env.DISCORD_WEBHOOK_URL);
   const repository = z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u)
     .safeParse(env.GITHUB_REPOSITORY);
-  if (!webhook.success || !repository.success || !env.GITHUB_TOKEN?.trim()) {
-    throw new Error("Set DISCORD_WEBHOOK_URL, GITHUB_REPOSITORY, and GITHUB_TOKEN");
+  if (!webhook.success || !repository.success || !env.MONITOR_GITHUB_TOKEN?.trim()) {
+    throw new Error("Set DISCORD_WEBHOOK_URL, GITHUB_REPOSITORY, and MONITOR_GITHUB_TOKEN");
   }
   const webhookUrl = new URL(webhook.data);
   if (webhookUrl.protocol !== "https:" ||
@@ -30,7 +30,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     webhookUrl: webhook.data,
     githubRepository: repository.data,
-    githubToken: env.GITHUB_TOKEN.trim(),
+    githubToken: env.MONITOR_GITHUB_TOKEN.trim(),
   };
 }
 
