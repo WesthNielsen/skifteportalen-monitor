@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { load } from "cheerio";
 import { diffLines } from "diff";
+import { extractText, getDocumentProxy } from "unpdf";
 import { request } from "./http.ts";
 import type { Fetch } from "./http.ts";
 import { SOURCE_URL } from "./model.ts";
@@ -8,6 +9,22 @@ import type { Notify, Resource, Snapshot, StateStore } from "./model.ts";
 
 const normalize = (text: string): string => text.replace(/\s+/gu, " ").trim();
 const hash = (bytes: Buffer): string => createHash("sha256").update(bytes).digest("hex");
+
+async function extractPdfText(bytes: Buffer, url: string): Promise<string> {
+  try {
+    const pdf = await getDocumentProxy(new Uint8Array(bytes), { maxImageSize: 16_777_216 });
+    try {
+      if (pdf.numPages > 200) throw new Error("PDF exceeds the 200-page extraction limit");
+      const { text } = await extractText(pdf, { mergePages: true });
+      return text.split(/\r?\n/u).map(normalize).filter(Boolean).join("\n");
+    } finally {
+      await pdf.loadingTask.destroy();
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown error";
+    throw new Error(`Document ${url}: PDF text extraction failed: ${detail}`, { cause: error });
+  }
+}
 
 export function parsePage(html: string): {
   pageText: string;
@@ -83,10 +100,16 @@ export async function collectSnapshot(fetcher: Fetch = globalThis.fetch): Promis
     )) {
       throw new Error(`Document ${link.url}: empty or HTML response instead of a document`);
     }
+    const isPdf = result.status === 200 && (
+      /\.pdf$/iu.test(new URL(link.url).pathname) ||
+      /^application\/pdf(?:\s*;|$)/iu.test(result.headers.get("content-type") ?? "") ||
+      result.body.subarray(0, 5).toString("ascii") === "%PDF-"
+    );
     resources.push({
       ...link,
       status: result.status,
       hash: result.status === 200 ? hash(result.body) : null,
+      ...(isPdf ? { pdfText: await extractPdfText(result.body, link.url) } : {}),
     });
   }
   return {
@@ -96,6 +119,21 @@ export async function collectSnapshot(fetcher: Fetch = globalThis.fetch): Promis
     pageText: parsed.pageText,
     resources,
   };
+}
+
+function changedLines(before: string, after: string, moreInfo: string): string[] {
+  const excerpts = diffLines(`${before}\n`, `${after}\n`)
+    .filter((part) => part.added || part.removed)
+    .flatMap((part) => part.value.trim().split("\n").map((line) =>
+      `${part.added ? "+" : "-"} ${line}`,
+    ));
+  const lines = excerpts.slice(0, 24).map((line) =>
+    line.length > 700 ? `${line.slice(0, 697)}...` : line,
+  );
+  if (excerpts.length > 24) {
+    lines.push(`... ${excerpts.length - 24} further changed lines. ${moreInfo}`);
+  }
+  return lines;
 }
 
 export function describeChanges(previous: Snapshot, current: Snapshot): string[] {
@@ -111,6 +149,19 @@ export function describeChanges(previous: Snapshot, current: Snapshot): string[]
       changes.push(`Document availability changed (${old.status} -> ${resource.status}): ${detail}`);
     } else if (old.hash !== resource.hash) {
       changes.push(`Document content changed: ${detail}`);
+      if (old.pdfText !== undefined || resource.pdfText !== undefined) {
+        if (old.pdfText === undefined || resource.pdfText === undefined) {
+          changes.push("PDF text diff unavailable: the previous or current version has no saved PDF text.");
+        } else if (!old.pdfText || !resource.pdfText) {
+          changes.push("PDF text diff unavailable: a version has no extractable text (it may be scanned).");
+        } else if (old.pdfText === resource.pdfText) {
+          changes.push("No extracted PDF text changed; the change may be visual or metadata-only.");
+        } else {
+          changes.push("PDF text changes (- old, + new):", ...changedLines(
+            old.pdfText, resource.pdfText, "Compare saved PDF text in the monitor-state branch history.",
+          ));
+        }
+      }
     }
   }
   for (const resource of previous.resources) {
@@ -120,17 +171,7 @@ export function describeChanges(previous: Snapshot, current: Snapshot): string[]
   }
   if (previous.pageText !== current.pageText) {
     changes.push("Article updated (includes announcements, deprecations, dates, and links).");
-    const excerpts = diffLines(`${previous.pageText}\n`, `${current.pageText}\n`)
-      .filter((part) => part.added || part.removed)
-      .flatMap((part) => part.value.trim().split("\n").map((line) =>
-        `${part.added ? "+" : "-"} ${line}`,
-      ));
-    changes.push(...excerpts.slice(0, 24).map((line) =>
-      line.length > 700 ? `${line.slice(0, 697)}...` : line,
-    ));
-    if (excerpts.length > 24) {
-      changes.push(`... ${excerpts.length - 24} further changed lines. See the source page.`);
-    }
+    changes.push(...changedLines(previous.pageText, current.pageText, "See the source page."));
   }
   return changes;
 }

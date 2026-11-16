@@ -6,6 +6,7 @@ import { SOURCE_URL } from "../src/model.ts";
 import type { Snapshot, StateStore } from "../src/model.ts";
 
 const documentUrl = new URL("/media/spec.yaml", SOURCE_URL).href;
+const pdfUrl = new URL("/media/guide.pdf", SOURCE_URL).href;
 const page = (text = "Current API", extra = "") => `
   <nav>Navigation</nav>
   <div id="articlecontent">
@@ -30,6 +31,28 @@ function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
     }],
     ...overrides,
   };
+}
+
+function pdf(text: string): Buffer {
+  const content = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`;
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+  ];
+  let value = "%PDF-1.4\n";
+  const offsets = [0];
+  for (const [index, object] of objects.entries()) {
+    offsets.push(Buffer.byteLength(value));
+    value += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  }
+  const xref = Buffer.byteLength(value);
+  value += `xref\n0 ${offsets.length}\n0000000000 65535 f \n`;
+  value += offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`).join("");
+  value += `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(value);
 }
 
 test("parses article, collapsed panels, links and entities but not navigation or scripts", () => {
@@ -90,6 +113,60 @@ test("rejects HTML masquerading as a successful spec download", async () => {
       new Response("<!doctype html><html>Maintenance</html>")), /HTML response/u);
 });
 
+test("collects PDF text and reports changed text after upgrading a hash-only baseline", async () => {
+  let version = "Old access instructions";
+  const collect = () => collectSnapshot(async (input) => {
+    const url = String(input);
+    if (url === SOURCE_URL) return new Response(page("API", '<a href="/media/guide.pdf">Guide</a>'));
+    if (url === pdfUrl) {
+      return new Response(new Uint8Array(pdf(version)), { headers: { "content-type": "application/pdf" } });
+    }
+    return new Response("openapi: 3.0.0");
+  });
+  const first = await collect();
+  assert.equal(first.resources.find((resource) => resource.url === pdfUrl)?.pdfText, version);
+  const legacy: Snapshot = {
+    ...first,
+    resources: first.resources.map(({ pdfText: _pdfText, ...resource }) => resource),
+  };
+  assert.deepEqual(describeChanges(legacy, first), []);
+  version = "New access instructions";
+  const second = await collect();
+  const changes = describeChanges(first, second).join("\n");
+  assert.match(changes, /PDF text changes/u);
+  assert.match(changes, /- Old access instructions/u);
+  assert.match(changes, /\+ New access instructions/u);
+  assert.match(describeChanges(legacy, second).join("\n"), /PDF text diff unavailable/u);
+});
+
+test("reports PDFs with no extractable text and non-text changes honestly", () => {
+  const resource = { url: pdfUrl, label: "Guide", status: 200 as const, hash: "a".repeat(64), pdfText: "Text" };
+  const before = snapshot({ resources: [resource] });
+  const after = snapshot({ resources: [{ ...resource, hash: "b".repeat(64) }] });
+  assert.match(describeChanges(before, after).join("\n"), /visual or metadata-only/u);
+  after.resources[0] = { ...resource, hash: "b".repeat(64), pdfText: "" };
+  assert.match(describeChanges(before, after).join("\n"), /no extractable text/u);
+});
+
+test("bounds PDF diffs and points to saved text for the remaining changes", () => {
+  const resource = { url: pdfUrl, label: "Guide", status: 200 as const, hash: "a".repeat(64), pdfText: "Old" };
+  const before = snapshot({ resources: [resource] });
+  const after = snapshot({ resources: [{
+    ...resource,
+    hash: "b".repeat(64),
+    pdfText: Array.from({ length: 60 }, (_, i) => `Line ${i}`).join("\n"),
+  }] });
+  assert.match(describeChanges(before, after).join("\n"), /further changed lines.*monitor-state branch history/u);
+});
+
+test("rejects invalid PDFs instead of silently saving an incomplete baseline", async () => {
+  await assert.rejects(collectSnapshot(async (input) => {
+    const url = String(input);
+    if (url === SOURCE_URL) return new Response(page("API", '<a href="/media/guide.pdf">Guide</a>'));
+    return new Response(url === pdfUrl ? "not a PDF" : "openapi: 3.0.0");
+  }), /PDF text extraction failed/u);
+});
+
 test("detects additions, removals, same-URL changes, availability and deprecation text", () => {
   const before = snapshot();
   const after = snapshot({
@@ -135,6 +212,25 @@ function memoryStore(initial: Snapshot | null): StateStore & { saved: Snapshot[]
     save: async (value) => { saved.push(value); },
   };
 }
+
+test("saves PDF text on an unchanged legacy baseline and includes later changes in notifications", async () => {
+  const resource = { url: pdfUrl, label: "Guide", status: 200 as const, hash: "a".repeat(64) };
+  const legacy = snapshot({ resources: [resource] });
+  const current = snapshot({ resources: [{ ...resource, pdfText: "Old instructions" }] });
+  const upgrade = memoryStore(legacy);
+  assert.equal(await runMonitor(upgrade, async () => current, async () => {
+    assert.fail("Adding PDF text to a baseline must not trigger an alert");
+  }), "unchanged");
+  const store = memoryStore(upgrade.saved[0] ?? null);
+  const updated = snapshot({ resources: [{ ...resource, hash: "b".repeat(64), pdfText: "New instructions" }] });
+  const messages: string[] = [];
+  assert.equal(await runMonitor(store, async () => updated, async (parts) => {
+    messages.push(...parts);
+  }), "changed");
+  assert.match(messages.join("\n"), /- Old instructions/u);
+  assert.match(messages.join("\n"), /\+ New instructions/u);
+  assert.equal(store.saved[0]?.resources[0]?.pdfText, "New instructions");
+});
 
 test("first run sends initialization then persists, subsequent unchanged run stays silent", async () => {
   const current = snapshot();

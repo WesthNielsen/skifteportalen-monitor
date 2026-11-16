@@ -8,7 +8,11 @@ const resourceSchema = z.object({
   label: z.string().min(1),
   status: z.union([z.literal(200), z.literal(404), z.literal(410)]),
   hash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
-}).refine((resource) => (resource.status === 200) === (resource.hash !== null));
+  pdfText: z.string().optional(),
+}).refine((resource) =>
+  (resource.status === 200) === (resource.hash !== null) &&
+  (resource.pdfText === undefined || resource.status === 200),
+);
 
 export const snapshotSchema = z.object({
   version: z.literal(1),

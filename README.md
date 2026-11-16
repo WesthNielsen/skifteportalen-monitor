@@ -14,8 +14,20 @@ or its linked documents change.
 
 Navigation, footer, scripts, cookie banners, styling and whitespace are excluded.
 The first successful run sends a setup confirmation and establishes the baseline.
-Unchanged runs send nothing. Update alerts include document links and a bounded
-article diff; they do not perform semantic OpenAPI compatibility analysis.
+Unchanged runs send nothing. Update alerts include document links and bounded
+article and PDF text diffs; they do not perform semantic OpenAPI compatibility
+analysis.
+
+PDF diffs compare extracted text, not the original files. Scanned pages, images,
+form fields, formatting and metadata may not be reflected. An alert says when
+text is unavailable or unchanged despite a byte-level change. Diffs show up to
+24 changed lines per document, with long lines shortened; the full extracted
+text can be compared in the state branch's snapshot history.
+
+Existing hash-only snapshots acquire PDF text on the next successful check.
+Changes occurring before that check cannot be compared against the old PDF:
+the monitor never saved its bytes or text. The new text is saved for subsequent
+comparisons.
 
 ## Run on GitHub Actions
 
@@ -69,11 +81,11 @@ GitHub's public-repository inactivity policy.
 
 It is one current
 snapshot file, not a history table; Git retains earlier versions in that
-branch's commit history. The snapshot contains the public article text,
-document URLs, hashes, statuses and check time, but no credentials or downloaded
-document bodies. Its size is capped below GitHub's 1 MB Contents API response
-limit. Delete the `monitor-state` branch only if you intentionally want to reset
-the baseline.
+branch's commit history. The snapshot contains the public article text, extracted
+PDF text, document URLs, hashes, statuses and check time, but no credentials or
+original document files. Its size is capped below GitHub's 1 MB Contents API
+response limit. Delete the `monitor-state` branch only if you intentionally want
+to reset the baseline.
 
 The hosted workflow uses GitHub's automatically provided `GITHUB_TOKEN` with
 `contents: write`; no personal access token, external database, Actions
@@ -93,6 +105,8 @@ for current terms.
   already unavailable on initialization. Other download failures, empty/HTML
   document responses, missing article/spec sections and corrupt stored state fail
   the run without replacing the baseline.
+- PDFs are limited to 200 pages for text extraction. Invalid, encrypted, or
+  otherwise unreadable PDFs fail the check rather than silently losing a diff.
 - All change messages must reach Discord before the baseline advances. Discord
   rate limits are retried; ambiguous network/server errors are not immediately
   retried because the message may already have arrived.
