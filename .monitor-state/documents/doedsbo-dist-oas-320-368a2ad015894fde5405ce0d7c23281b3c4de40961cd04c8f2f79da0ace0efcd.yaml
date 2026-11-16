@@ -1,0 +1,3914 @@
+openapi: 3.0.3
+info:
+  title: doedsbo
+  description: Api til behandling af doedsbosager som ekstern.
+  version: 3.2.0
+servers:
+- url: https://api.domstol.dk
+- url: https://api.test-minskiftesag.net
+security:
+- bearerAuth: [
+    ]
+paths:
+  /doedsbo/{sagId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentDoedsbosag
+      summary: Hent en dødsbosag som en ekstern er tilknyttet.
+      responses:
+        '200':
+          description: Hent information om en dødsbosag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/doedsbosag'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/afdoede:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentAfdoede
+      summary: Henter informationer om afdøde.
+      responses:
+        '200':
+          description: Hent information om afdøde.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/afdoede'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/boetsVaretager:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentBoetsVaretager
+      summary: Henter informationer om boets varetager.
+      responses:
+        '200':
+          description: Informationer om boets varetager er hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/boetsVaretager'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/dokumentSamlinger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentDokumenterSamlinger
+      responses:
+        '200':
+          description: Alle dokumenter blev tilknyttet sagen.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/dokumentSamling'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/boOplysninger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentBoOplysninger
+      summary: Henter boOplysninger på en given dødsbosag.
+      responses:
+        '200':
+          description: BoOplysninger er hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/boOplysninger'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbo
+      operationId: opdaterBoOplysninger
+      summary: Opdater boOplysninger på en given dødsbosag.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/boOplysninger'
+      responses:
+        '200':
+          description: BoOplysninger er korrekt oprettet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/boOplysninger'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/skrivTilRetten:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - doedsbo
+      operationId: skrivTilRetten
+      summary: Skriv en meddelelse til retten.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/skrivTilRetten'
+      responses:
+        '201':
+          description: Meddelelse er modtaget.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/skrivTilRetten:
+    post:
+      tags:
+      - doedsbo
+      operationId: skrivTilRettenUdenSag
+      summary: Skriv en meddelelse til retten uden sag.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/skrivTilRettenUdenSag'
+      responses:
+        '201':
+          description: Meddelelse er modtaget.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/meddelelserFraEkstern:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentMeddelelserFraEkstern
+      summary: Henter den eksterne brugers egne meddelelser til retten.
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      responses:
+        '200':
+          description: Den eksterne brugers meddelelser til retten.
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/meddelelseFraEkstern'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/meddelelserFraEkstern/{meddelelseId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - name: meddelelseId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentMeddelelseFraEkstern
+      summary: Henter en ekstern meddelelse til retten.
+      responses:
+        '200':
+          description: Den eksterne meddelelse til retten.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/meddelelseFraEkstern'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/sagsdeltagere:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentSagsdeltagere
+      summary: Henter alle sagsdeltagere som er relevate for brugeren.
+      responses:
+        '200':
+          description: Sagsdeltagere er hentet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rolle'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/haendelser:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      summary: Hent historikken, som består af hændelser.
+      tags:
+      - doedsbo
+      operationId: hentHaendelser
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/haendelserQuery'
+      responses:
+        '200':
+          description: Liste af hændelse som lever op til kriterierne.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/haendelse'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentBobehandling
+      summary: Hent en bobehandling for et dødsbo.
+      responses:
+        '200':
+          description: Hent information om en bobehandling for en dødsbosag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bobehandling'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/validation/formueoversigt:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: validateFormueoversigt
+      summary: Validerer en formueoversigt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/formueoversigtValidationRequest'
+      responses:
+        200:
+          description: Formueoversigt er valideret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationConclusions'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/validation/boudlaegOekonomi:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: validateBoudlaegOekonomi
+      summary: Validerer en boudlaegOekonomiopgoerelse.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoudlaegOekonomiValidationRequest'
+      responses:
+        200:
+          description: Formueoversigt er valideret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationConclusions'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/skifteform/{skifteform}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    - $ref: '#/components/parameters/skifteform'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentSkifteformInformationer.
+      summary: Henter informationer nødvendigt for den ønskede skifteform.
+      responses:
+        200:
+          description: Hentet oplysninger korrekt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/skifteformInfo'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/anmodOmSkifteform:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: anmodOmSkifteform
+      summary: Anmoder om en skifteform for doedsbo.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/anmodning'
+      responses:
+        '200':
+          description: Anmodning er modtaget.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/anmodning'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/roller:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentRoller
+      summary: Henter brugerens roller på den givne doedsbosag.
+      responses:
+        '200':
+          description: Brugeren har adgang til sagen og har modtaget sine roller.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/eksternRolle'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/handlinger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentMuligeHandlinger
+      summary: Henter brugerens mulige handlinger på den givne doedsbosag.
+      responses:
+        '200':
+          description: Brugeren har adgang til sagen og har modtaget sine mulige handlinger.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/eksternHandling'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/indgivFuldmagt:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - doedsbo
+      operationId: indgivFuldmagt
+      summary: Indgiver en digital fuldmagt.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opretFuldmagt'
+      responses:
+        '200':
+          description: Fuldmagt er modtaget.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/opretFuldmagt'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/indsendAabningsstatus:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: indsendAabningsstatus
+      summary: Indsender en åbningsstatus.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/indsendAabningsstatus'
+      responses:
+        '200':
+          description: Åbningsstatus er modtaget.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/indsendAabningsstatus'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/indsendFormueoversigt:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: indsendFormueoversigt
+      summary: Indsender en formueoversigt.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/formueoversigt'
+      responses:
+        '201':
+          description: Formueoversigt er modtaget.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/formueoversigt:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentFormueoversigt
+      summary: Henter formueoversigt for boet.
+      responses:
+        '200':
+          description: Hent formueoversigt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/formueoversigt'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/indsendBoopgoerelse:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    post:
+      tags:
+      - doedsbo
+      operationId: indsendBoopgoerelse
+      summary: Indsender en boopgørelse.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/indsendBoopgoerelse'
+      responses:
+        '200':
+          description: Boopgørelsen er modtaget.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/indsendBoopgoerelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/arvinger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentArvingerForBobehandling
+      summary: Henter bekræftede arvinger for en given bobehandling.
+      responses:
+        '200':
+          description: Bekræftede arvinger for bobehandling er hentet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/arving'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/fuldmagter/giver:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentAktuelGivenFuldmagt
+      summary: Henter fuldmagter der ikke er tilbagetrukket.
+      responses:
+        '200':
+          description: Fuldmagter er hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/fuldmagt'
+        '404':
+          $ref: '#/components/responses/genericErrorResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/fuldmagter/haver:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentHavendeFuldmagter
+      summary: Henter fuldmagter der er givet.
+      responses:
+        '200':
+          description: Fuldmagter er hentet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/fuldmagt'
+        '404':
+          $ref: '#/components/responses/genericErrorResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/frister:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentFrister
+      summary: Henter mine frister.
+      responses:
+        '200':
+          description: Henter mine frister.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/frist'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/frister/{fristId}/data:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    - $ref: '#/components/parameters/fristId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentFristData
+      summary: Henter relevant data for en frist.
+      responses:
+        '200':
+          description: Henter relevant data for en frist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/fristData'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/frister/{fristId}/godkendAnmodning:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    - $ref: '#/components/parameters/fristId'
+    post:
+      tags:
+      - doedsbo
+      operationId: godkendAnmodning
+      summary: Godkender en anmodning om udlevering.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GodkendAnmodningOmUdlevering'
+      responses:
+        '200':
+          description: Godkendelse modtaget og accepteret.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/mitCpr:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentMitCpr
+      summary: Henter Cpr på indlogget bruger.
+      responses:
+        '200':
+          description: Cpr er hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/mitCpr'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/tinglys:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - doedsbo
+      operationId: anmodOmTinglysning
+      summary: Anmoder om tinglysning.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tinglysningAnmodning'
+      responses:
+        '200':
+          description: Anmodning er modtaget.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/bobehandlinger/{bobehandlingId}/kladde/{eksternHandling}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/bobehandlingId'
+    - $ref: '#/components/parameters/eksternHandling'
+    get:
+      tags:
+      - doedsbo
+      operationId: hentKladde
+      summary: Henter kladde.
+      responses:
+        '200':
+          description: Henter kladde.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kladde'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbo
+      operationId: opretEllerOpdaterKladde
+      summary: Opretter eller opdaterer kladde.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kladde'
+      responses:
+        '200':
+          description: Kladde er oprettet eller opdaterert.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/book-vejledningsmoede:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - doedsbo
+      operationId: bookVejledningsmoede
+      summary: Booker et vejledningsmøde.
+      responses:
+        '200':
+          description: Vejledningsmøde er booket.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/fravaelg-vejledningsmoede:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - doedsbo
+      operationId: fravaelgVejledningsmoede
+      summary: Fravælger vejledningsmøde. Hvilket resulterer i at introduktionen ikke
+        bliver vist ved login.
+      responses:
+        '200':
+          description: Vejledningsmøde er fravalgt.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    eksternHandling:
+      name: eksternHandling
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/eksternHandling'
+    fristId:
+      name: fristId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+    page:
+      name: page
+      description: Side for paginering.
+      required: false
+      in: query
+      schema:
+        type: integer
+    size:
+      name: size
+      description: Antal elementer pr. side.
+      required: false
+      in: query
+      schema:
+        type: integer
+    sort:
+      name: sort
+      description: Liste af felter der skal sorteres på.
+      required: false
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+    direction:
+      name: direction
+      description: Stigende eller faldende retning for søgeresultater.
+      in: query
+      schema:
+        $ref: '#/components/schemas/directionEnum'
+    sagId:
+      name: sagId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+      description: Id på dødsbosag.
+    bobehandlingId:
+      name: bobehandlingId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+      description: Id på en bobehandling til en dødsbosag.
+    skifteform:
+      name: skifteform
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/skifteform'
+      description: Skifteform som kontaktpersonen anmoder om.
+  schemas:
+    kladde:
+      type: object
+      properties:
+        content:
+          type: string
+    opretFuldmagt:
+      type: object
+      properties:
+        kontaktpersonErfuldmagtshaver:
+          type: boolean
+        fuldmagtHaverNavn:
+          type: string
+        fuldmagtHaverFoedselsdatoCpr:
+          type: string
+        fuldmagtHaverAdresse:
+          type: string
+        fuldmagtHaverPostNrBy:
+          type: string
+        fuldmagtGiverNavn:
+          type: string
+        fuldmagtGiverCpr:
+          $ref: '#/components/schemas/cprNummer'
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        anmodeOmUdleveringAfBoet:
+          type: boolean
+        underskriveOgGodkendeOpgoerelseAfBoet:
+          type: boolean
+        underskriveOgGodkendeBoopgoerelsen:
+          type: boolean
+    indsendAabningsstatus:
+      type: object
+      properties:
+        dummy:
+          type: string
+    indsendBoopgoerelse:
+      type: object
+      properties:
+        dummy:
+          type: string
+    eksternHandling:
+      type: string
+      enum:
+      - SKRIV_TIL_RETTEN
+      - ANMOD_OM_SKIFTEFORM
+      - BOOK_VEJLEDNINGSMOEDE
+      - INDSEND_FORMUEOVERSIGT
+      - INDSEND_AABNINGSSTATUS
+      - INDSEND_BOOPGOERELSE
+      - INDSEND_REDEGOERELSE
+      - OPLYS_OM_ARVINGER
+      - INDGIV_DIGITAL_SKIFTEFULDMAGT
+      - TILBAGETRAEK_DIGITAL_SKIFTEFULDMAGT
+      - GODKEND_ANMODNING_OM_UDLEVERING
+      - ANMOD_OM_TINGLYSNING
+      - ANMELD_KRAV
+      - REGISTRER_TILGODEHAVENDE
+      - OPLYS_OM_AKTIVER_EFFEKTER
+      - OPRET_FORESPOERGSEL
+      - OPRET_PROFORMAOPGOERELSE
+    eksternRolle:
+      type: string
+      enum:
+      - KONTAKTPERSON
+      - ARVING
+      - BOBESTYRER
+    mitCpr:
+      type: object
+      properties:
+        cpr:
+          $ref: '#/components/schemas/cprNummer'
+    GodkendAnmodningOmUdlevering:
+      type: object
+      required:
+      - erklaering1
+      - erklaering2
+      - erklaering3
+      - erklaering4
+      properties:
+        erklaering1:
+          type: string
+          default: Jeg antager, at boets aktiver er tilstrækkelige til at dække boets
+            passiver.
+        erklaering2:
+          type: string
+          default: Jeg godkender, at skifteretten, uanset min eventuelle adressebeskyttelse,
+            kan anføre min adresse i skifteretsattesten
+        erklaering3:
+          type: string
+          default: Jeg bekræfter under stafansvar, at de udfylte oplysninger er rigtige.
+        erklaering4:
+          type: string
+          default: Jeg godkender anmodningen om at få boet udleveret.
+    fristData:
+      discriminator:
+        propertyName: typeDiscriminator
+      oneOf:
+      - $ref: '#/components/schemas/fristDataGodkendAnmodningOmUdlevering'
+      - $ref: '#/components/schemas/fristDataPlaceholder'
+    fristDataGodkendAnmodningOmUdlevering:
+      type: object
+      required:
+      - typeDiscriminator
+      - anmodning
+      properties:
+        anmodning:
+          $ref: '#/components/schemas/anmodning'
+        typeDiscriminator:
+          type: string
+          default: fristDataGodkendAnmodningOmUdlevering
+    fristDataPlaceholder:
+      type: object
+      required:
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          default: fristDataGodkendAnmodningOmUdlevering
+    skrivTilRetten:
+      type: object
+      required:
+      - emneord
+      properties:
+        emneord:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentType'
+        titel:
+          type: string
+          maxLength: 30
+          description: Denne angives kun i tilfælde af emneordet 'ANDEN'.
+        meddelelse:
+          type: string
+          maxLength: 2400
+          description: Fritekst som sendes til retten.
+        idPaaFristenSomLoeses:
+          $ref: '#/components/schemas/id'
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/eksterntUploadetDokument'
+    skrivTilRettenUdenSag:
+      type: object
+      required:
+      - embedskode
+      - responsekanal
+      - emne
+      properties:
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+        responsekanal:
+          type: string
+          enum:
+          - DIGITAL_POST_PERSON
+          - DIGITAL_POST_VIRKSOMHED
+          - SIKKER_MAIL
+        responseCpr:
+          $ref: '#/components/schemas/cprNummer'
+        responseCvr:
+          $ref: '#/components/schemas/cvrNummer'
+        responseSikkerMail:
+          $ref: '#/components/schemas/email'
+        emne:
+          type: string
+          maxLength: 30
+        meddelelse:
+          type: string
+          maxLength: 2400
+          description: Fritekst som sendes til retten.
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/eksterntUploadetDokument'
+    meddelelseFraEkstern:
+      type: object
+      required:
+      - id
+      - titel
+      - oprettetTidspunkt
+      - emneord
+      - bilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        titel:
+          type: string
+        oprettetTidspunkt:
+          type: string
+          format: date-time
+        emneord:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentType'
+        meddelelse:
+          $ref: '#/components/schemas/dokument'
+        bilag:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+    doedsbosag:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        sagsnummer:
+          $ref: '#/components/schemas/sagsnummer'
+        doedsbojournalId:
+          $ref: '#/components/schemas/id'
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+        status:
+          type: string
+        bobehandlinger:
+          type: array
+          items:
+            $ref: '#/components/schemas/bobehandling'
+        visIntroduktion:
+          type: boolean
+    bobehandling:
+      type: object
+      required:
+      - bobehandlingId
+      properties:
+        bobehandlingId:
+          $ref: '#/components/schemas/id'
+        titel:
+          type: string
+        status:
+          type: string
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        foreslaeedeSkifteformer:
+          type: array
+          items:
+            $ref: '#/components/schemas/skifteform'
+    afdoede:
+      type: object
+      properties:
+        navn:
+          type: string
+          maxLength: 250
+        foedselsdato:
+          type: string
+          format: date
+        doedsdato:
+          type: string
+          format: date
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        erNavneOgAdressebeskyttet:
+          type: boolean
+        efterlevendeAegtefaellePersonId:
+          $ref: '#/components/schemas/id'
+    boetsVaretager:
+      type: object
+      properties:
+        navn:
+          type: string
+          maxLength: 250
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+        erNavneOgAdressebeskyttet:
+          type: boolean
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    landekodeEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - AF
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - AR
+      - AM
+      - AW
+      - AZ
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BY
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - IO
+      - VG
+      - BN
+      - BG
+      - BF
+      - BI
+      - KH
+      - CM
+      - CA
+      - KY
+      - CF
+      - CL
+      - CC
+      - CO
+      - KM
+      - CD
+      - CG
+      - CK
+      - CR
+      - CU
+      - CW
+      - CY
+      - DK
+      - DJ
+      - DM
+      - DO
+      - EC
+      - EG
+      - SV
+      - CI
+      - ER
+      - EE
+      - SZ
+      - ET
+      - FK
+      - FJ
+      - PH
+      - FI
+      - AE
+      - FR
+      - GF
+      - PF
+      - TF
+      - FO
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - CX
+      - CV
+      - KZ
+      - KE
+      - CN
+      - KG
+      - KI
+      - HR
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NL
+      - NP
+      - NZ
+      - NI
+      - NE
+      - NG
+      - NU
+      - KP
+      - MK
+      - MP
+      - NF
+      - 'NO'
+      - NC
+      - OM
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PN
+      - PL
+      - PT
+      - PR
+      - QA
+      - RE
+      - RO
+      - RU
+      - RW
+      - SB
+      - WS
+      - SM
+      - ST
+      - SA
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - BL
+      - SH
+      - KN
+      - LC
+      - SX
+      - PM
+      - VC
+      - SK
+      - SI
+      - SO
+      - ES
+      - LK
+      - MF
+      - GB
+      - SD
+      - SR
+      - SJ
+      - SE
+      - ZA
+      - GS
+      - KR
+      - SS
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TD
+      - TH
+      - CZ
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TC
+      - TV
+      - TR
+      - DE
+      - UG
+      - UA
+      - HU
+      - UY
+      - US
+      - UM
+      - UZ
+      - VU
+      - VA
+      - VE
+      - EH
+      - VN
+      - WF
+      - YE
+      - ZM
+      - ZW
+      - GQ
+      - AT
+      - TL
+      - AX
+    struktureretDanskAdresse:
+      description: Dansk struktureret adresse.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje
+      - postnummer
+      - postdistrikt
+      properties:
+        darId:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        postdistrikt:
+          description: Navnet på postnummeret. Dette fremstilles typisk som sidste
+            led, fx 2630 Taastrup.
+          type: string
+        supplerendeBynavn:
+          description: 'Optionelt felt - typisk landsbyens navn eller andet lokalt
+            stednavn der er fastsat af kommunen for at præcisere adressens beliggenhed
+            indenfor postnummeret. Indgår som en del af den officielle adressebetegnelse.
+            Indtil 34 tegn. Eksempel: ”Sønderholm”.'
+          type: string
+          maxLength: 34
+    fritekstadresse:
+      description: Danske eller udenlandsk adresse i fritekstform.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje1
+      properties:
+        adresselinje1:
+          type: string
+          maxLength: 200
+        adresselinje2:
+          type: string
+          maxLength: 200
+        adresselinje3:
+          type: string
+          maxLength: 200
+        adresselinje4:
+          type: string
+          maxLength: 200
+        adresselinje5:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    adresse:
+      description: Wrapper til adresser af forskellige typer.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adressetype
+      properties:
+        struktureretDanskAdresse:
+          $ref: '#/components/schemas/struktureretDanskAdresse'
+        fritekstadresse:
+          $ref: '#/components/schemas/fritekstadresse'
+        adressetype:
+          $ref: '#/components/schemas/adressetype'
+    adressetype:
+      x-namespace: dk.domstol.oas.common.adressev2
+      type: string
+      enum:
+      - STRUKTURERET_DANSK_ADRESSE
+      - FRITEKSTADRESSE
+      - INGEN_ADRESSE
+    id:
+      type: string
+      format: uuid
+    cprNummer:
+      type: string
+      pattern: ^\d{10}$
+    cvrNummer:
+      type: string
+      pattern: ^[1-9][0-9]{7}$
+    email:
+      type: string
+      format: email
+      maxLength: 128
+    telefonnummer:
+      type: string
+      pattern: ^\+?\d*$
+      maxLength: 20
+    embedskode:
+      description: Unik forkortelse for et givent embede, der kan anvendes til identificering
+        af et specifik embede i retskreds-service.
+      type: string
+      pattern: ^[A-ZÆØÅ]{3}$
+      maxLength: 3
+      minLength: 3
+    beloeb:
+      type: number
+    positivtDecimaltal:
+      type: number
+      minimum: 0.01
+    positivtDecimaltalEllerNul:
+      type: number
+      minimum: 0
+    sagsnummer:
+      type: string
+      maxLength: 255
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+    boOplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        primaertBoligforhold:
+          $ref: '#/components/schemas/boligforhold'
+        sekundaereBoligforhold:
+          x-namespace: dk.domstol.oas.common.doedsbo
+          type: array
+          items:
+            $ref: '#/components/schemas/boligforhold'
+        transportmidler:
+          $ref: '#/components/schemas/transportmidler'
+        oevrigeOplysninger:
+          $ref: '#/components/schemas/oevrigeOplysninger'
+        begravelse:
+          $ref: '#/components/schemas/begravelse'
+        indboBeloeb:
+          $ref: '#/components/schemas/beloeb'
+        oevrigeVaerdier:
+          $ref: '#/components/schemas/oevrigeVaerdier'
+        gaeldIBoet:
+          $ref: '#/components/schemas/gaeldIBoet'
+        arveoplysninger:
+          $ref: '#/components/schemas/arveoplysninger'
+    ejerbolig:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        vaerdi:
+          $ref: '#/components/schemas/beloeb'
+        skyldesPengeIEjendommen:
+          type: boolean
+        gaeld:
+          $ref: '#/components/schemas/beloeb'
+        saelgesEllerOvertagesAfFamilie:
+          type: boolean
+        saelgesEllerOvertagesAfTredjepart:
+          type: boolean
+        forventesLetAtSaelge:
+          type: boolean
+    andelsbolig:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        handelsvaerdi:
+          $ref: '#/components/schemas/beloeb'
+        erDerGaeldIBoligen:
+          type: boolean
+        gaeld:
+          $ref: '#/components/schemas/beloeb'
+    sommerhus:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        handelsvaerdi:
+          $ref: '#/components/schemas/beloeb'
+        erDerGaeldIBoligen:
+          type: boolean
+        gaeld:
+          $ref: '#/components/schemas/beloeb'
+    kolonihave:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        handelsvaerdi:
+          $ref: '#/components/schemas/beloeb'
+        erDerGaeldIBoligen:
+          type: boolean
+        gaeld:
+          $ref: '#/components/schemas/beloeb'
+    andenBolig:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        beskrivelse:
+          type: string
+        handelsvaerdi:
+          $ref: '#/components/schemas/beloeb'
+        erDerGaeldIBoligen:
+          type: boolean
+        gaeld:
+          $ref: '#/components/schemas/beloeb'
+    lejebolig:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        forventetOverskudPaaBoligindskud:
+          $ref: '#/components/schemas/beloeb'
+    plejehjem:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        forventetOverskudPaaBoligindskud:
+          $ref: '#/components/schemas/beloeb'
+    boligforhold:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        type:
+          $ref: '#/components/schemas/boligforholdTypeEnum'
+        ejerbolig:
+          $ref: '#/components/schemas/ejerbolig'
+        andelsbolig:
+          $ref: '#/components/schemas/andelsbolig'
+        lejebolig:
+          $ref: '#/components/schemas/lejebolig'
+        plejehjem:
+          $ref: '#/components/schemas/plejehjem'
+        sommerhus:
+          $ref: '#/components/schemas/sommerhus'
+        kolonihave:
+          $ref: '#/components/schemas/kolonihave'
+        andenBolig:
+          $ref: '#/components/schemas/andenBolig'
+    boligforholdTypeEnum:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      description: Type af boligforhold.
+      type: string
+      enum:
+      - EJERBOLIG
+      - ANDELSBOLIG
+      - LEJEBOLIG
+      - PLEJEHJEM
+      - SOMMERHUS
+      - KOLONIHAVE
+      - ANDET
+      - USIKKER
+    skifteform:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      description: Type af skifteform.
+      type: string
+      enum:
+      - BOUDLAEG
+      - FORENKLET_PRIVAT_SKIFTE_PARAGRAF_33
+      - FORENKLET_PRIVAT_SKIFTE_PARAGRAF_34
+      - PRIVAT_SKIFTE
+      - USKIFTET_BO
+      - AEGTEFAELLEUDLAEG
+      - BOBESTYRERBO
+      - TIDLIGERE_USKIFTET_BO
+      - RENTENYDER_BO
+      - ANALOGI_AF_ARVELOVENS_34
+    transportmiddelEnum:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      description: Type af transportmiddel.
+      type: string
+      enum:
+      - BIL
+      - BAAD
+      - CAMPINGVOGN
+      - TRAILER
+      - ANDET
+    transportmidler:
+      type: array
+      items:
+        $ref: '#/components/schemas/transportmiddel'
+    transportmiddel:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/transportmiddelEnum'
+        vaerdi:
+          $ref: '#/components/schemas/beloeb'
+        maerke:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          maxLength: 100
+        aargang:
+          type: string
+          maxLength: 100
+        gaeld:
+          type: boolean
+        gaeldsbeloeb:
+          $ref: '#/components/schemas/beloeb'
+        kreditor:
+          type: string
+          maxLength: 100
+        registreringsnummer:
+          type: string
+          maxLength: 100
+    begravelse:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        udgifterBedemand:
+          $ref: '#/components/schemas/beloeb'
+        udgifterGravsten:
+          $ref: '#/components/schemas/beloeb'
+        udgifterSammenkomst:
+          $ref: '#/components/schemas/beloeb'
+        udgifterGravsted:
+          $ref: '#/components/schemas/beloeb'
+        oevrigeUdgifter:
+          $ref: '#/components/schemas/beloeb'
+        pengeHaevet:
+          type: boolean
+        haevetBeloeb:
+          $ref: '#/components/schemas/beloeb'
+    oevrigeOplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        erDerGivetPengeSenesteAar:
+          type: boolean
+        pengegaver:
+          type: array
+          items:
+            $ref: '#/components/schemas/pengegave'
+        drevAfdoedeVirksomhed:
+          type: boolean
+        cvrnumre:
+          type: array
+          items:
+            $ref: '#/components/schemas/cvrNummer'
+    pengegave:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        periode:
+          type: string
+          enum:
+          - OP_TIL_EN_MAANED
+          - EN_TIL_TRE_MAANEDER
+          - FIRE_TIL_TOLV_MAANEDER
+        hvem:
+          type: string
+          maxLength: 100
+        beloeb:
+          $ref: '#/components/schemas/beloeb'
+    oevrigeVaerdier:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        erDerKontantBeholdning:
+          type: boolean
+        kontantBeloeb:
+          $ref: '#/components/schemas/beloeb'
+        erDerIndestaaenderIPengeinstitut:
+          type: boolean
+        indestaaenderIPengeinstitut:
+          type: array
+          items:
+            $ref: '#/components/schemas/indestaaendeIPengeinstitut'
+        erDerVaerdipapirer:
+          type: boolean
+        erDerBankboks:
+          type: boolean
+        bankbokseIndhold:
+          type: array
+          items:
+            type: string
+            maxLength: 1000
+    gaeldIBoet:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        harAfdoedeLaantPengeHosPrivate:
+          type: boolean
+        skyldigtBeloebHosPrivate:
+          $ref: '#/components/schemas/beloeb'
+        harAfdoedeLaantPengeTilPrivate:
+          type: boolean
+        udlaantBeloebTilPrivate:
+          $ref: '#/components/schemas/beloeb'
+    indestaaendeIPengeinstitut:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        pengeinstitut:
+          type: string
+        registreringsnummer:
+          type: string
+          pattern: ^\d{4}$
+        kontonummer:
+          type: string
+          pattern: ^\d{10}$
+        beloeb:
+          $ref: '#/components/schemas/beloeb'
+    arveoplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        varAfdoedeGift:
+          type: boolean
+        erDerAegtepagt:
+          type: boolean
+        havdeAfdoedeBoern:
+          type: boolean
+        erDerFaellesBoern:
+          type: boolean
+        erDerSaerBoern:
+          type: boolean
+        erDerAdopteredeBoern:
+          type: boolean
+        erDerBortadopteredeBoern:
+          type: boolean
+        sadAfdoedeUskiftetBo:
+          type: boolean
+        erDerUdenlandskeArvinger:
+          type: boolean
+        erDerUoverensstemmelseMellemArvinger:
+          type: boolean
+        kanAlleArvingerVaretageEgneInteresser:
+          type: boolean
+        erEfterlevendeAegtefaelleDement:
+          type: boolean
+        erDerUmyndigerArvinger:
+          type: boolean
+        erDerOprettetTestamente:
+          type: boolean
+        erDerLegatarerTestamente:
+          type: boolean
+        arvinger:
+          type: array
+          items:
+            type: string
+    anmodning:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      oneOf:
+      - $ref: '#/components/schemas/uskiftetBoAnmodning'
+      - $ref: '#/components/schemas/privatSkifteAnmodning'
+      - $ref: '#/components/schemas/bobestyrerbehandlingAnmodning'
+      - $ref: '#/components/schemas/boudlaegAnmodning'
+      - $ref: '#/components/schemas/forenkletPrivatSkifte33Anmodning'
+      - $ref: '#/components/schemas/forenkletPrivatSkifte34Anmodning'
+      - $ref: '#/components/schemas/aegtefaelleudlaegAnmodning'
+      discriminator:
+        propertyName: typeDiscriminator
+        mapping:
+          uskiftetBoAnmodning: '#/components/schemas/uskiftetBoAnmodning'
+          privatSkifteAnmodning: '#/components/schemas/privatSkifteAnmodning'
+          bobestyrerbehandlingAnmodning: '#/components/schemas/bobestyrerbehandlingAnmodning'
+          boudlaegAnmodning: '#/components/schemas/boudlaegAnmodning'
+          forenkletPrivatSkifte33Anmodning: '#/components/schemas/forenkletPrivatSkifte33Anmodning'
+          forenkletPrivatSkifte34Anmodning: '#/components/schemas/forenkletPrivatSkifte34Anmodning'
+          aegtefaelleudlaegAnmodning: '#/components/schemas/aegtefaelleudlaegAnmodning'
+    uskiftetBoAnmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^uskiftetBoAnmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        aegtefaelleArvingOplystAfBoet:
+          $ref: '#/components/schemas/personOplystAfBoet'
+        fuldmagt:
+          $ref: '#/components/schemas/dokument'
+        aegtefaellenOpfylderBetingelserErklaering:
+          x-namespace: dk.domstol.oas.common.doedsbo
+          type: string
+          enum:
+          - ERKLAERET_AF_AEGTEFAELLE
+          - ERKLAERET_PAA_VEGNE_AF_AEGTEFAELLE
+        solvenserklaering:
+          $ref: '#/components/schemas/dokument'
+        arvingerOplystAfBoet:
+          type: array
+          items:
+            $ref: '#/components/schemas/personOplystAfBoet'
+        erklaering1:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        erklaering2:
+          description: Jeg anmoder om at få boet udleveret. Jeg bekræfter under straffeansvar,
+            at de udfyldte oplysninger er rigtige.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    privatSkifteAnmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - erklaering3
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^privatSkifteAnmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        arvingerOplystAfBoet:
+          type: array
+          items:
+            $ref: '#/components/schemas/deltagerOplystAfBoet'
+        opfylderBetingelserneForSolvens:
+          description: Jeg opfylder betingelserne for solvens og er arving i boet.
+          type: boolean
+        solvenserklaeringDokumentId:
+          $ref: '#/components/schemas/id'
+        erklaering1:
+          description: Jeg antager, at boets aktiver er tilstrækkelige til at dække
+            boets passiver.
+          type: string
+        erklaering2:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        erklaering3:
+          description: Jeg anmoder om at få boet udleveret. Jeg bekræfter under strafansvar,
+            at de udfyldte oplysninger er rigtige.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    bobestyrerbehandlingAnmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^bobestyrerbehandlingAnmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        bobestyrerValg:
+          enum:
+          - SKIFTERET_UDPEGER
+          - ANGIVER_SELV
+        bemaerkning:
+          type: string
+          maxLength: 500
+        fornavne:
+          type: string
+        efternavne:
+          type: string
+        virksomhedNavn:
+          type: string
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        bekraefterAnmodningBobestyrerbehandling:
+          description: Jeg bekræfter, at jeg anmoder om, at boet udleveres til bobestyrerbehandling.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    boudlaegAnmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - erklaering3
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^boudlaegAnmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        udlaegsmodtagereOplystAfBoet:
+          type: array
+          items:
+            $ref: '#/components/schemas/deltagerOplystAfBoet'
+        oekonomiOpgoerelse:
+          $ref: '#/components/schemas/boudlaegOekonomi'
+        erklaering1:
+          description: Jeg erklærer at afdøde ikke efterlader sig andet end ovenstående
+            aktiver og begravelsesomkostninger.
+          type: string
+        erklaering2:
+          description: Jeg erklærer, at jeg forpligter mig til at betale udgifterne
+            ved begravelsen og boets behandling, og til at rydde afdødes bolig.
+          type: string
+        erklaering3:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    forenkletPrivatSkifte33Anmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^forenkletPrivatSkifte33Anmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        arvingerOplystAfBoet:
+          type: array
+          items:
+            $ref: '#/components/schemas/deltagerOplystAfBoet'
+        boetOpfylderBetingelserErklaering:
+          description: Jeg erklærer, at boet opfylder ovenstående betingelser.
+          type: boolean
+        opfylderBetingelserneForSolvens:
+          description: Jeg opfylder betingelserne for solvens og er arving i boet.
+          type: boolean
+        solvenserklaeringDokumentId:
+          $ref: '#/components/schemas/id'
+        erklaering1:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        erklaering2:
+          description: Jeg anmoder om at få boet udleveret. Jeg bekræfter under strafansvar,
+            at de udfyldte oplysninger er rigtige.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    forenkletPrivatSkifte34Anmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^forenkletPrivatSkifte34Anmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        aegtefaelleArvingOplystAfBoet:
+          $ref: '#/components/schemas/personOplystAfBoet'
+        fuldmagt:
+          $ref: '#/components/schemas/dokument'
+        boetOpfylderBetingelserErklaering:
+          x-namespace: dk.domstol.oas.common.doedsbo
+          type: string
+          enum:
+          - ERKLAERET_AF_AEGTEFAELLE
+          - ERKLAERET_PAA_VEGNE_AF_AEGTEFAELLE
+        solvenserklaering:
+          $ref: '#/components/schemas/dokument'
+        opfylderBetingelserneForSolvens:
+          description: Jeg erklærer, under strafansvar, at opfylde ovenstående betingelser
+            for solvens.
+          type: boolean
+        erklaering1:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        erklaering2:
+          description: Jeg anmoder om at få boet udleveret. Jeg bekræfter under strafansvar,
+            at de udfyldte oplysninger er rigtige.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    aegtefaelleudlaegAnmodning:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - erklaering1
+      - erklaering2
+      - typeDiscriminator
+      properties:
+        typeDiscriminator:
+          type: string
+          pattern: ^aegtefaelleudlaegAnmodning$
+        aegtefaelleOplysninger:
+          $ref: '#/components/schemas/aegtefaelleOplysninger'
+        aegtefaelleArvingOplystAfBoet:
+          $ref: '#/components/schemas/personOplystAfBoet'
+        fuldmagt:
+          $ref: '#/components/schemas/dokument'
+        boetOpfylderBetingelserErklaering:
+          x-namespace: dk.domstol.oas.common.doedsbo
+          type: string
+          enum:
+          - ERKLAERET_AF_AEGTEFAELLE
+          - ERKLAERET_PAA_VEGNE_AF_AEGTEFAELLE
+        formueoversigt:
+          $ref: '#/components/schemas/formueoversigt'
+        erklaering1:
+          description: Som kontaktperson er jeg indforstået med, at skifteretten,
+            uanset min eventuelle adressebeskyttelse, kan anføre min adresse i skifteretsattesten,
+            ligesom min adresse og kontaktoplysninger kan anføres i proklama i Statstidende
+            eller på minskiftesag.dk.
+          type: string
+        erklaering2:
+          description: Jeg anmoder om at få boet udleveret. Jeg bekræfter under straffeansvar,
+            at de udfyldte oplysninger er rigtige.
+          type: string
+        status:
+          $ref: '#/components/schemas/anmodningStatus'
+        statusskiftetidspunkt:
+          type: string
+          format: date-time
+        modtagetTidspunkt:
+          type: string
+          format: date-time
+        indsender:
+          $ref: '#/components/schemas/deltager'
+        skifteform:
+          $ref: '#/components/schemas/skifteform'
+        testamenteOplysninger:
+          $ref: '#/components/schemas/testamenteOplysninger'
+        proklama:
+          $ref: '#/components/schemas/proklama'
+        afdoedSadIUskiftetBo:
+          type: boolean
+    anmodningStatus:
+      type: string
+      x-namespace: dk.domstol.oas.common.doedsbo
+      enum:
+      - GODKENDT
+      - AFVIST
+      - AFVENTER_BEHANDLING
+      - TIL_BERIGELSE
+    testamente:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        dokumentId:
+          $ref: '#/components/schemas/id'
+        dato:
+          type: string
+          format: date
+    slaegtskab:
+      type: string
+      x-namespace: dk.domstol.oas.common.doedsbo
+      enum:
+      - SAERBARN
+      - FAELLESBARN
+      - FORAELDER
+      - BEDSTEFORAELDER
+      - BARNEBARN_AF_FAELLESBARN
+      - BARNEBARN_AF_SAERBARN
+      - OLDEBARN_FAELLESBARN
+      - OLDEBARN_SAERBARN
+      - AEGTEFAELLE
+      - ARVING_TESTAMENTE
+      - LEGATAR
+      - SOESKEN
+      - SAMLEVER
+      - SKIFTEVAERGE
+      - ANDEN
+    frist:
+      type: object
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        bobehandlingId:
+          $ref: '#/components/schemas/id'
+        titel:
+          type: string
+        beskrivelse:
+          type: string
+        bemaerkning:
+          type: string
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        dato:
+          type: string
+          format: date
+        type:
+          $ref: '#/components/schemas/fristType'
+        deltager:
+          $ref: '#/components/schemas/deltager'
+        afslutningstidspunkt:
+          type: string
+          format: date-time
+        annulleringstidspunkt:
+          type: string
+          format: date-time
+        redigeringstidspunkt:
+          type: string
+          format: date-time
+    fristType:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      enum:
+      - AFVENTER_DOEDSANMELDELSE
+      - AFVENTER_CPR_HAENDELSE
+      - AFVENTER_DOEDSBOJOURNAL_OPRETTELSE
+      - INDSEND_ANMODNING_OM_BOETS_UDLEVERING
+      - INDSEND_FORMUEOVERSIGT
+      - INDSEND_FULDMAGT
+      - INDSEND_ARVEAFKALD
+      - INDSEND_AABNINGSSTATUS
+      - INDSEND_BOOPGOERELSE
+      - INDBETAL_ACONTO_BOAFGIFT
+      - INDBETAL_BOAFGIFT
+      - INDBETAL_RETSAFGIFT
+      - GODKEND_ANMODNING_OM_UDLEVERING
+      - GODKEND_BOOPGOERELSE
+      - UDBEDR_BOOPGOERELSE
+      - BOOK_VEJLEDNINGSMOEDE
+      - AFVENTER_SAGSDATA_INDHENTNING
+      - ANDEN_FRIST
+      - INDSEND_INDBERETNING
+      - RING_TIL_SKIFTERETTEN
+    skifteformInfo:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      oneOf:
+      - $ref: '#/components/schemas/uskiftetBoInfo'
+      - $ref: '#/components/schemas/boudlaegInfo'
+      - $ref: '#/components/schemas/privatSkifteInfo'
+      - $ref: '#/components/schemas/forenkletPrivatSkifte33Info'
+      - $ref: '#/components/schemas/forenkletPrivatSkifte34Info'
+      - $ref: '#/components/schemas/aegtefaelleudlaegInfo'
+    uskiftetBoInfo:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        aegtefaelle:
+          $ref: '#/components/schemas/arving'
+        faellesboern:
+          type: array
+          items:
+            $ref: '#/components/schemas/arving'
+        saerboern:
+          type: array
+          items:
+            $ref: '#/components/schemas/arving'
+    boudlaegInfo:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        udlaegsmodtagere:
+          type: array
+          items:
+            $ref: '#/components/schemas/arving'
+    privatSkifteInfo:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        arvinger:
+          type: array
+          items:
+            $ref: '#/components/schemas/arving'
+    forenkletPrivatSkifte33Info:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        arvinger:
+          type: array
+          items:
+            $ref: '#/components/schemas/arving'
+    forenkletPrivatSkifte34Info:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        aegtefaelle:
+          $ref: '#/components/schemas/arving'
+    aegtefaelleudlaegInfo:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        aegtefaelle:
+          $ref: '#/components/schemas/arving'
+    dokumentSamling:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      description: En samling af dokumenter der er tilføjet til sagen i samme aktion.
+      required:
+      - samlingTitel
+      - dokumenter
+      properties:
+        samlingTitel:
+          type: string
+        dato:
+          description: Dato hvor dokumentsamlingen blev tilføjet til sagen. Hvis flere
+            dokumenter siden tilføjes vil denne dato forblive uændret.
+          type: string
+          format: date
+        dokumenter:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/dokument'
+    dokument:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - dokumentlagerId
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        dokumentlagerId:
+          $ref: '#/components/schemas/id'
+        titel:
+          type: string
+          maxLength: 50
+        afsenderType:
+          $ref: '#/components/schemas/afsenderType'
+        afsenderSagdeltagerId:
+          $ref: '#/components/schemas/id'
+        afsenderAnden:
+          type: string
+          maxLength: 100
+        modtagelsesdato:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - BEHANDLET
+          - UBEHANDLET
+        type:
+          $ref: '#/components/schemas/dokumentType'
+        visISagensGang:
+          type: boolean
+        udstilletTilSkat:
+          type: boolean
+        udstilletTilSkatTidspunkt:
+          type: string
+          format: date-time
+    dokumentType:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      enum:
+      - AABNINGSSTATUS
+      - ADOPTIONSBEVILLING
+      - AEGTEPAGT
+      - AFGOERELSE_FRA_SKAT
+      - ANDET
+      - ANMODNING
+      - ARVEAFKALD
+      - BETALINGSKVITTERING_FOR_PROKLAMA
+      - BLANKETTER_OG_VEJLEDNINGER
+      - BOAFGIFTSBEREGNING
+      - BOBESTYRERDATA
+      - BOMOEDEREFERAT
+      - BOOPGOERELSE
+      - DOEDSANMELDELSE
+      - DOMBOG
+      - FORESPOERGSEL
+      - FORMUEOVERSIGT
+      - FREMTIDFULDMAGT
+      - GAVEERKLAERING
+      - HENVENDELSE
+      - KAUTION
+      - KLAGE_OVER_BOBESTYRER
+      - KVITTERING
+      - KAERE
+      - MEDDELELSE
+      - NULSTILLET_KONTOKORT
+      - OPGOERELSE
+      - OPLYSNINGER_OM_BEGUNSTIGEDE
+      - REDEGOERELSE
+      - RETSBOG
+      - SALAERINDSTILLING
+      - SALAERMEDDELELSE
+      - SAMTYKKE_ERKLAERING
+      - SKIFTEFULDMAGT
+      - SKIFTERETSATTEST
+      - SOLVENS_ERKLAERING
+      - SVAR_PAA_KLAGE
+      - TESTAMENTE
+      - UDEN_KATEGORI
+      - SKIFTEVAERGEATTEST
+    afsenderType:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      enum:
+      - SAGSDELTAGER
+      - ANDET
+    testamenteOplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        afdoedeHavdeTestamente:
+          type: boolean
+        testamenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/testamente'
+    aegtefaelleOplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - aegtefaelleStatus
+      properties:
+        aegtefaelleStatus:
+          type: string
+          enum:
+          - HAR_EN_NULEVENDE_AEGTEFAELLE
+          - HAR_EN_TIDLIGERE_AFDOED_AEGTEFAELLE
+          - VAR_IKKE_GIFT
+        doedsdatoEllerAarstal:
+          type: string
+        personOplystAfBoet:
+          $ref: '#/components/schemas/personOplystAfBoet'
+    proklama:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        afdoedPersonligtEjetVirksomhedOplysninger:
+          $ref: '#/components/schemas/personligtEjetVirksomhedOplysninger'
+        tidligereAfdoedAegtefaellePersonligtEjetVirksomhedOplysninger:
+          $ref: '#/components/schemas/personligtEjetVirksomhedOplysninger'
+    personligtEjetVirksomhedOplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        drivesPersonligtEjetVirksomhed:
+          type: boolean
+        personligtEjetVirksomheder:
+          type: array
+          items:
+            $ref: '#/components/schemas/personligtEjetVirksomhed'
+    personligtEjetVirksomhed:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        navn:
+          type: string
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+    fuldmagt:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      properties:
+        fuldmagtgiver:
+          $ref: '#/components/schemas/deltager'
+        fuldmagthaver:
+          $ref: '#/components/schemas/deltager'
+        anmodeOmUdleveringAfBoet:
+          type: boolean
+        underskriveOgGodkendeOpgoerelseAfBoet:
+          type: boolean
+        underskriveOgGodkendeBoopgoerelsen:
+          type: boolean
+        dokumentId:
+          $ref: '#/components/schemas/id'
+    boudlaegOekonomi:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      required:
+      - typeDiscriminator
+      properties:
+        aegtefaellesOekonomi:
+          $ref: '#/components/schemas/boudlaegAegtefaellesOekonomi'
+        afdoedesOekonomi:
+          $ref: '#/components/schemas/boudlaegAfdoedesOekonomi'
+        begravelsesomkostninger:
+          $ref: '#/components/schemas/boudlaegBegravelsesomkostninger'
+        afdoedesBruttoformueSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesNettoformueSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesBoslodSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        boudlaegSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        typeDiscriminator:
+          type: string
+          pattern: ^boudlaegOekonomi$
+          default: boudlaegOekonomi
+    boudlaegAegtefaellesOekonomi:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        vaerdiAfIndboSmykkerOgSamlinger:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        kontanter:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        vaerdipapirer:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        koeretoejer:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        bankkonti:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        andreAktiver:
+          type: array
+          items:
+            $ref: '#/components/schemas/beloebOgBeskrivelse'
+        gaeldIPengeinstitut:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        andenGaeld:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    boudlaegAfdoedesOekonomi:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        vaerdiAfIndboSmykkerOgSamlinger:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        begravelseshjaelp:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        kontanter:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        vaerdipapirer:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        indestaaenderIBanker:
+          type: array
+          items:
+            $ref: '#/components/schemas/bankindestaaende'
+        samletBeloebIndbetaltTilAfdoedesBankkontiEfterDoedsdag:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        koeretoejer:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        boligindskud:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        andreAktiver:
+          type: array
+          items:
+            $ref: '#/components/schemas/beloebOgBeskrivelse'
+    boudlaegBegravelsesomkostninger:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        udgifterTilBegravelseBedemand:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        udgifterTilSammenkomstEfterBegravelse:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        vedligeholdelseKoebAfGravsted:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        udgifterVedBoetsBehandling:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    bankindestaaende:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        registreringsnummer:
+          type: string
+        kontonummer:
+          type: string
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    formueoversigt:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      required:
+      - typeDiscriminator
+      properties:
+        oplysningerOmBoet:
+          $ref: '#/components/schemas/oplysningerOmBoet'
+        aktiverPrDoedsdag:
+          $ref: '#/components/schemas/aktiverPrDoedsdag'
+        saereje:
+          $ref: '#/components/schemas/saereje'
+        passiverPrDoedsdag:
+          $ref: '#/components/schemas/passiverPrDoedsdag'
+        andreAktiver:
+          $ref: '#/components/schemas/andreAktiver'
+        afdoedesPassiverSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        afdoedesAktiverSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        afdoedesNettoformueSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesPassiverSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesAktiverSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesNettoformueSum:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        typeDiscriminator:
+          type: string
+          pattern: ^formueoversigt$
+          default: formueoversigt
+    passiverPrDoedsdag:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        oevrigGaeld:
+          type: array
+          items:
+            $ref: '#/components/schemas/oevrigGaeld'
+        kravFraSkifteportalen:
+          type: array
+          items:
+            $ref: '#/components/schemas/kravFraSkifteportalen'
+    kravFraSkifteportalen:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        kravId:
+          type: string
+        inkluderIOpgoerelse:
+          type: boolean
+        fordeling:
+          $ref: '#/components/schemas/pengefordeling'
+        indberetter:
+          type: string
+        kreditor:
+          type: string
+        oprettelsesdato:
+          type: string
+          format: date
+        erEndeligt:
+          type: boolean
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        bemaerkning:
+          type: string
+    oevrigGaeld:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        beskrivelse:
+          type: string
+        fordeling:
+          $ref: '#/components/schemas/pengefordeling'
+    andreAktiver:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        afdoedesPensionsydelserOgLivsforsikringer:
+          $ref: '#/components/schemas/afdoedesPensionsydelserOgLivsforsikringer'
+        aegtefaellesPensionsydelserOgLivsforsikringer:
+          $ref: '#/components/schemas/aegtefaellesPensionsydelserOgLivsforsikringer'
+        saerligeRettigheder:
+          type: array
+          items:
+            $ref: '#/components/schemas/saerligeRettigheder'
+    saerligeRettigheder:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        beskrivelse:
+          type: string
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    afdoedesPensionsydelserOgLivsforsikringer:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        derErYdelseSomTilfalderAegtefaelleVedDoedsfald:
+          type: boolean
+        udbetalinger:
+          type: array
+          items:
+            $ref: '#/components/schemas/udbetalingForPensionsydelseEllerLivsforsikring'
+    aegtefaellesPensionsydelserOgLivsforsikringer:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        faarAegtefaelleUdbetalingerFraAtp:
+          type: boolean
+        faarAegtefaelleUdbetalingerFraOevrige:
+          type: boolean
+        udbetalinger:
+          type: array
+          items:
+            $ref: '#/components/schemas/udbetalingForPensionsydelseEllerLivsforsikring'
+    haendelse:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - tekst
+      - tidspunkt
+      properties:
+        bobehandlingId:
+          $ref: '#/components/schemas/id'
+        tekst:
+          type: string
+        tidspunkt:
+          type: string
+          format: date-time
+        opretter:
+          $ref: '#/components/schemas/haendelseOpretter'
+    haendelseOpretter:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        id:
+          description: Kan være personId, profilId eller CVR-nummer.
+          type: string
+        navn:
+          description: Navn på ejer af hændelsen.
+          type: string
+        type:
+          $ref: '#/components/schemas/haendelseopretterType'
+    haendelseopretterType:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      enum:
+      - PERSON
+      - PERSON_UDEN_CPR
+      - VIRKSOMHED
+      - VIRKSOMHED_UDEN_CVR
+      - ADGANGSPROFIL
+      - FRITEKST
+      - MEDARBEJDER_I_SKIFTERETTEN
+      - SKIFTERETTEN
+    haendelserQuery:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        bobehandlingId:
+          $ref: '#/components/schemas/id'
+        fra:
+          description: Dato (fra) for hændelser, som ønskes filtreret på. Hvis ikke
+            angivet, ignoreres parameteren.
+          type: string
+          format: date
+        til:
+          description: Dato (til) for hændelser, som ønskes filtreret på. Hvis ikke
+            angivet, ignoreres parameteren.
+          type: string
+          format: date
+        oprettetAfIds:
+          description: Liste af personId, profilId og CVR-numre, som ønskes filtreret
+            på. Hvis ikke angivet, ignoreres parameteren.
+          type: array
+          items:
+            type: string
+    udbetalingForPensionsydelseEllerLivsforsikring:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        navnPaaSelskab:
+          type: string
+          maxLength: 50
+        udbetalingsfrekvens:
+          $ref: '#/components/schemas/udbetalingsfrekvensType'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    udbetalingsfrekvensType:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: string
+      enum:
+      - ENGANGSBELOEB
+      - PR_MAANDED
+      - PR_AAR
+    oplysningerOmBoet:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        havdeAfdoedeSaereje:
+          type: boolean
+        havdeLaengslevendeAegtefaelleSaereje:
+          type: boolean
+    saereje:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        afdoedesSaereje:
+          $ref: '#/components/schemas/afdoedesSaereje'
+        laengstlevendeAegtefaellesSaereje:
+          $ref: '#/components/schemas/laengstlevendeAegtefaellesSaereje'
+    afdoedesSaereje:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        aktiver:
+          $ref: '#/components/schemas/beloebOgBeskrivelse'
+        passiver:
+          $ref: '#/components/schemas/beloebOgBeskrivelse'
+        hvemSkalArve:
+          type: string
+    laengstlevendeAegtefaellesSaereje:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        aktiver:
+          $ref: '#/components/schemas/beloebOgBeskrivelse'
+        passiver:
+          $ref: '#/components/schemas/beloebOgBeskrivelse'
+    beloebOgBeskrivelse:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        beskrivelseAfBeloeb:
+          type: string
+    aktiverPrDoedsdag:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        kontanterOgBankindestaaender:
+          $ref: '#/components/schemas/kontanterOgBankindestaaender'
+        vaerdiAfIndboSmykkerOgSamlinger:
+          $ref: '#/components/schemas/pengefordeling'
+        indkomstUdbetaltEfterDoedsdag:
+          $ref: '#/components/schemas/indkomstUdbetaltEfterDoedsdag'
+        fasteEjendomme:
+          type: array
+          items:
+            $ref: '#/components/schemas/fastEjendom'
+        vaerdipapirerOgAndreInvesteringer:
+          $ref: '#/components/schemas/vaerdipapirerOgAndreInvesteringer'
+        oevrigeAktiver:
+          type: array
+          items:
+            $ref: '#/components/schemas/oevrigtAktiv'
+        oevrigeTilgodehavender:
+          type: array
+          items:
+            $ref: '#/components/schemas/oevrigtTilgodehavende'
+        tilgodehavenderFraSkifteportalen:
+          type: array
+          items:
+            $ref: '#/components/schemas/tilgodehavendeFraSkifteportalen'
+        koeretoejer:
+          type: array
+          items:
+            $ref: '#/components/schemas/koeretoej'
+        vaerdiAfErhverv:
+          $ref: '#/components/schemas/vaerdiAfErhverv'
+    vaerdiAfErhverv:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        vaerdiAfForretningEllerVirksomhed:
+          $ref: '#/components/schemas/pengefordeling'
+        vaerdiAfLandbrugsejendom:
+          $ref: '#/components/schemas/pengefordeling'
+        vaerdiAfUdlejningsejendomme:
+          type: array
+          items:
+            $ref: '#/components/schemas/vaerdiAfEjendom'
+    koeretoej:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        type:
+          type: string
+        maerke:
+          type: string
+        registreringsnummer:
+          type: string
+        aargang:
+          type: string
+          maxLength: 4
+        handelsvaerdi:
+          $ref: '#/components/schemas/pengefordeling'
+    oevrigtAktiv:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        beskrivelse:
+          type: string
+        vaerdi:
+          $ref: '#/components/schemas/pengefordeling'
+    oevrigtTilgodehavende:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        beskrivelse:
+          type: string
+        vaerdi:
+          $ref: '#/components/schemas/pengefordeling'
+        navnPaaSkyldner:
+          type: string
+        dokumentation:
+          type: string
+          format: uuid
+    tilgodehavendeFraSkifteportalen:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        tilgodehavendeId:
+          type: string
+        inkluderIOpgoerelse:
+          type: boolean
+        fordeling:
+          $ref: '#/components/schemas/pengefordeling'
+        indberetter:
+          type: string
+        debitor:
+          type: string
+        oprettelsesdato:
+          type: string
+          format: date
+        erUdbetalt:
+          type: boolean
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        bemaerkning:
+          type: string
+    vaerdiAfEjendom:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        fordeling:
+          $ref: '#/components/schemas/pengefordeling'
+        dokumentation:
+          type: array
+          items:
+            type: string
+            format: uuid
+    vaerdipapirerOgAndreInvesteringer:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        danskRegistreredeAktier:
+          $ref: '#/components/schemas/pengefordeling'
+        udenlandskRegistreredeAktier:
+          $ref: '#/components/schemas/pengefordeling'
+        udenlandskRegistreredeVaerdipapirer:
+          $ref: '#/components/schemas/pengefordeling'
+        obligationer:
+          $ref: '#/components/schemas/pengefordeling'
+        investeringsbeviser:
+          $ref: '#/components/schemas/pengefordeling'
+        anparter:
+          $ref: '#/components/schemas/pengefordeling'
+        kommanditanparter:
+          $ref: '#/components/schemas/pengefordeling'
+        pantebreve:
+          $ref: '#/components/schemas/pengefordeling'
+    pengefordeling:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        afdoedesAndel:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        aegtefaellesAndel:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    kontanterOgBankindestaaender:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        kontanter:
+          $ref: '#/components/schemas/pengefordeling'
+        indestaaenderIBank:
+          $ref: '#/components/schemas/pengefordeling'
+    indkomstUdbetaltEfterDoedsdag:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        overskydeneSkat:
+          $ref: '#/components/schemas/pengefordeling'
+        loenPensionStipendierDagpengeEtc:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        feriepenge:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        loenmodtagernesDyrtidsfond:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        efterloensbidrag:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        andenIndtaegt:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+    fastEjendom:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        id:
+          description: Støttefelt til frontend.
+          type: string
+        type:
+          $ref: '#/components/schemas/fastEjendomType'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        anslaaetVaerdi:
+          $ref: '#/components/schemas/pengefordeling'
+        beskrivelse:
+          type: string
+    fastEjendomType:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: string
+      enum:
+      - EJERLEJLIGHED
+      - GRUND
+      - HELAARSHUS
+      - KOLONIHAVEHUS
+      - SOMMERHUS
+      - ANDELSBOLIG
+      - ANDET
+    tinglysningAnmodning:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          $ref: '#/components/schemas/email'
+        anmeldelser:
+          type: array
+          minLength: 1
+          items:
+            $ref: '#/components/schemas/tinglysningAnmeldelse'
+    tinglysningAnmeldelse:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - type
+      - dokumentIdentifikator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        type:
+          $ref: '#/components/schemas/tinglysningAnmeldelseType'
+        aktivIdentifikator:
+          maxLength: 400
+          type: string
+        dokumentIdentifikator:
+          maxLength: 400
+          type: string
+        omhandlerAfdoedAegtefaelleIUskiftetBo:
+          type: boolean
+        bemaerkning:
+          maxLength: 400
+          type: string
+    tinglysningAnmeldelseType:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      enum:
+      - EJENDOM
+      - ANDEL
+      - BIL
+    deltager:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/adgangsprofil'
+      - $ref: '#/components/schemas/person'
+      - $ref: '#/components/schemas/virksomhed'
+      - $ref: '#/components/schemas/personUdenCpr'
+      - $ref: '#/components/schemas/virksomhedUdenCvr'
+      discriminator:
+        propertyName: typeDiscriminator
+        mapping:
+          adgangsprofil: '#/components/schemas/adgangsprofil'
+          person: '#/components/schemas/person'
+          virksomhed: '#/components/schemas/virksomhed'
+          personUdenCpr: '#/components/schemas/personUdenCpr'
+          virksomhedUdenCvr: '#/components/schemas/virksomhedUdenCvr'
+    adgangsprofil:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - partnerId
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        journalnr:
+          type: string
+        tilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        partnerId:
+          $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: ^adgangsprofil$
+    person:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - personId
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        tilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        personId:
+          $ref: '#/components/schemas/id'
+        erUndtagetDigitalPost:
+          type: boolean
+        erUndtagetSkifteportalen:
+          type: boolean
+        erNavneOgAdressebeskyttet:
+          type: boolean
+        repraesentant:
+          $ref: '#/components/schemas/repraesentant'
+        typeDiscriminator:
+          type: string
+          default: ^person$
+    virksomhed:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - cvr
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        tilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        virksomhedReference:
+          type: string
+          maxLength: 200
+        fritagetForBoafgift:
+          type: boolean
+        erUndtagetDigitalPost:
+          type: boolean
+        erUndtagetSkifteportalen:
+          type: boolean
+        kontaktpersonFornavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEfternavn:
+          type: string
+          maxLength: 100
+        journalnr:
+          type: string
+        typeDiscriminator:
+          type: string
+          default: ^virksomhed$
+    personUdenCpr:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - typeDiscriminator
+      - fornavn
+      - efternavn
+      - foedselsdato
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        tilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        fornavn:
+          type: string
+          maxLength: 100
+        efternavn:
+          type: string
+          maxLength: 100
+        foedselsdato:
+          type: string
+          format: date
+        erUndtagetDigitalPost:
+          type: boolean
+        erUndtagetSkifteportalen:
+          type: boolean
+        erNavneOgAdressebeskyttet:
+          type: boolean
+        repraesentant:
+          $ref: '#/components/schemas/repraesentant'
+        typeDiscriminator:
+          type: string
+          default: ^personUdenCpr$
+    virksomhedUdenCvr:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.deltager
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - typeDiscriminator
+      - virksomhedsnavn
+      - kontaktpersonFornavn
+      - kontaktpersonEfternavn
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        tilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        virksomhedsnavn:
+          type: string
+          maxLength: 255
+        kontaktpersonFornavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEfternavn:
+          type: string
+          maxLength: 100
+        erUndtagetDigitalPost:
+          type: boolean
+        erUndtagetSkifteportalen:
+          type: boolean
+        journalnr:
+          type: string
+        typeDiscriminator:
+          type: string
+          default: ^virksomhedUdenCvr$
+    rolle:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.rolle
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/arving'
+      - $ref: '#/components/schemas/kontaktperson'
+      - $ref: '#/components/schemas/bobestyrer'
+      discriminator:
+        propertyName: typeDiscriminator
+        mapping:
+          arving: '#/components/schemas/arving'
+          kontaktperson: '#/components/schemas/kontaktperson'
+          bobestyrer: '#/components/schemas/bobestyrer'
+    arving:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.rolle
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - bekraeftet
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        deltager:
+          $ref: '#/components/schemas/deltager'
+        relationTilAfdoede:
+          $ref: '#/components/schemas/slaegtskab'
+        fuldmagt:
+          $ref: '#/components/schemas/fuldmagt'
+        bekraeftet:
+          type: boolean
+        arveafkald:
+          type: boolean
+        harAfgivetSkiftefuldmagt:
+          type: boolean
+        harAfgivetSamtykkeTilUskiftetBo:
+          type: boolean
+        harSolvenserklaering:
+          type: boolean
+        erAdopteret:
+          type: boolean
+        typeDiscriminator:
+          type: string
+          pattern: ^arving$
+    kontaktperson:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.rolle
+      type: object
+      additionalProperties: false
+      required:
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        deltager:
+          $ref: '#/components/schemas/deltager'
+        typeDiscriminator:
+          type: string
+          pattern: ^kontaktperson$
+    bobestyrer:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern.rolle
+      type: object
+      additionalProperties: false
+      required:
+      - typeDiscriminator
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        deltager:
+          $ref: '#/components/schemas/deltager'
+        typeDiscriminator:
+          type: string
+          pattern: ^bobestyrer$
+    repraesentant:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      required:
+      - identifikator
+      - repraesentantIdentifikationType
+      - repraesentationsformType
+      properties:
+        identifikator:
+          type: string
+          maximum: 36
+        repraesentantIdentifikationType:
+          $ref: '#/components/schemas/repraesentantIdentifikationType'
+        repraesentationsformType:
+          $ref: '#/components/schemas/repraesentantType'
+        journalnummer:
+          type: string
+          maximum: 255
+        kontaktinformationer:
+          $ref: '#/components/schemas/kontaktinformationer'
+        medarbejdersNavn:
+          type: string
+          maximum: 200
+    repraesentantIdentifikationType:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      type: string
+      enum:
+      - CVR
+      - PERSON_ID
+    repraesentantType:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      type: string
+      enum:
+      - VAERGE
+      - SKIFTEVAERGE
+      - FULDMAGTSHAVER
+    deltagerOplystAfBoet:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/personOplystAfBoet'
+      - $ref: '#/components/schemas/virksomhedOplystAfBoet'
+      discriminator:
+        propertyName: typeDiscriminator
+        mapping:
+          personOplystAfBoet: '#/components/schemas/personOplystAfBoet'
+          virksomhedOplystAfBoet: '#/components/schemas/virksomhedOplystAfBoet'
+    personOplystAfBoet:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      type: object
+      required:
+      - typeDiscriminator
+      - fornavn
+      - efternavn
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        relationTilAfdoede:
+          $ref: '#/components/schemas/slaegtskab'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        bemaerkning:
+          $ref: '#/components/schemas/fritekstfelt'
+        fornavn:
+          type: string
+          maxLength: 100
+        efternavn:
+          type: string
+          maxLength: 100
+        cpr:
+          $ref: '#/components/schemas/cprNummer'
+        intetCpr:
+          type: boolean
+        foedselsdato:
+          type: string
+          format: date
+        adopteret:
+          type: boolean
+        fuldmagt:
+          type: boolean
+        delvistArveafkald:
+          type: boolean
+        arveafkald:
+          type: boolean
+        samtykkeTilUskiftetBo:
+          type: boolean
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/dokument'
+        typeDiscriminator:
+          type: string
+          pattern: ^personOplystAfBoet$
+    virksomhedOplystAfBoet:
+      x-namespace: dk.domstol.oas.common.doedsbo.ekstern
+      type: object
+      required:
+      - typeDiscriminator
+      - kontaktpersonFornavn
+      - kontaktpersonEfternavn
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        relationTilAfdoede:
+          $ref: '#/components/schemas/slaegtskab'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        bemaerkning:
+          $ref: '#/components/schemas/fritekstfelt'
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        intetCvr:
+          type: boolean
+        virksomhedsnavn:
+          type: string
+          maxLength: 255
+        fritagetBoafgift:
+          type: boolean
+        kontaktpersonFornavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEfternavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEmail:
+          $ref: '#/components/schemas/email'
+        kontaktpersonTelefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        typeDiscriminator:
+          type: string
+          default: ^virksomhedOplystAfBoet$
+    kontaktinformationer:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        andenAdresse:
+          $ref: '#/components/schemas/adresse'
+    fritekstfelt:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: string
+      maxLength: 500
+    modtager:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      oneOf:
+      - $ref: '#/components/schemas/modtagerCpr'
+      - $ref: '#/components/schemas/modtagerCvr'
+      - $ref: '#/components/schemas/modtagerEmail'
+      - $ref: '#/components/schemas/modtagerSagDeltager'
+      - $ref: '#/components/schemas/modtagerAdgangsprofil'
+      discriminator:
+        propertyName: typeDiscriminator
+    modtagerCpr:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      required:
+      - personId
+      - typeDiscriminator
+      properties:
+        personId:
+          $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: modtagerCpr
+        fritagetDigitalPost:
+          type: boolean
+          default: false
+    modtagerCvr:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      required:
+      - cvr
+      - typeDiscriminator
+      properties:
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        typeDiscriminator:
+          type: string
+          default: modtagerCvr
+        fritagetDigitalPost:
+          type: boolean
+          default: false
+    modtagerEmail:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      required:
+      - email
+      - typeDiscriminator
+      properties:
+        email:
+          $ref: '#/components/schemas/email'
+        navn:
+          type: string
+          maxLength: 200
+        typeDiscriminator:
+          type: string
+          default: modtagerEmail
+        fritagetDigitalPost:
+          type: boolean
+          default: false
+    modtagerSagDeltager:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      required:
+      - modtagerSagDeltager
+      - typeDiscriminator
+      properties:
+        deltagerId:
+          $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: modtagerSagDeltager
+        fritagetDigitalPost:
+          type: boolean
+          default: false
+    modtagerAdgangsprofil:
+      x-namespace: dk.domstol.oas.common.doedsbo.meddelelser
+      required:
+      - profilId
+      - typeDiscriminator
+      properties:
+        profilId:
+          $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: modtagerAdgangsprofil
+        fritagetDigitalPost:
+          type: boolean
+          default: false
+    meddelelsetemplateBilag:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      oneOf:
+      - $ref: '#/components/schemas/dokumentlagerBilag'
+      - $ref: '#/components/schemas/dokumentdannelseBilag'
+      discriminator:
+        propertyName: typeDiscriminator
+    dokumentlagerBilag:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        dokumentlagerId:
+          $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          pattern: ^dokumentlagerBilag$
+          default: dokumentlagerBilag
+    dokumentdannelseBilag:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      properties:
+        dokumentdannelseId:
+          $ref: '#/components/schemas/id'
+        titel:
+          type: string
+          maxLength: 255
+        typeDiscriminator:
+          type: string
+          pattern: ^dokumentdannelseBilag$
+          default: dokumentdannelseBilag
+    validationConclusions:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        fieldConclusions:
+          type: array
+          items:
+            $ref: '#/components/schemas/fieldConclusion'
+        shownSteps:
+          $ref: '#/components/schemas/shownSteps'
+        sums:
+          type: array
+          items:
+            $ref: '#/components/schemas/sum'
+    sum:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        sumType:
+          $ref: '#/components/schemas/sumType'
+        total:
+          $ref: '#/components/schemas/positivtDecimaltal'
+    sumType:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: string
+      enum:
+      - AFDOEDES_AKTIVER_PR_DOEDSDAG
+      - AEGTEFAELLES_AKTIVER_PR_DOEDSDAG
+      - AFDOEDES_PASSIVER_PR_DOEDSDAG
+      - AEGTEFAELLES_PASSIVER_PR_DOEDSDAG
+      - AFDOEDES_NETTOFORMUE
+      - AFDOEDES_BRUTTOFORMUE
+      - AEGTEFAELLES_NETTOFORMUE
+      - AEGTEFAELLES_BOSLOD
+      - BOUDLAEG
+    fieldConclusion:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        fieldName:
+          type: string
+        path:
+          type: string
+        type:
+          $ref: '#/components/schemas/conclusionType'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/conclusionError'
+    conclusionError:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      properties:
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+    conclusionType:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: string
+      enum:
+      - REQUIRED_FIELD
+      - OPTIONAL_FIELD
+    shownSteps:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: object
+      properties:
+        steps:
+          type: array
+          items:
+            type: string
+    opgoerelseValidationRequest:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      oneOf:
+      - $ref: '#/components/schemas/formueoversigtValidationRequest'
+      - $ref: '#/components/schemas/BoudlaegOekonomiValidationRequest'
+      discriminator:
+        propertyName: typeDiscriminator
+    formueoversigtValidationRequest:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      required:
+      - formueoversigt
+      - typeDiscriminator
+      properties:
+        formueoversigt:
+          $ref: '#/components/schemas/formueoversigt'
+        excludeValidationErrors:
+          type: boolean
+          description: If 'true', no validation errors will be returned in the fieldConclusions.
+        typeDiscriminator:
+          type: string
+          pattern: ^formueoversigtValidationRequest$
+          default: formueoversigtValidationRequest
+    BoudlaegOekonomiValidationRequest:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      required:
+      - afdoedeHarEfterlevendeAegtefaelle
+      - typeDiscriminator
+      properties:
+        boudlaegOekonomi:
+          $ref: '#/components/schemas/boudlaegOekonomi'
+        afdoedeHarEfterlevendeAegtefaelle:
+          type: boolean
+        excludeValidationErrors:
+          type: boolean
+          description: If 'true', no validation errors will be returned in the fieldConclusions.
+        typeDiscriminator:
+          type: string
+          pattern: ^BoudlaegOekonomiValidationRequest$
+          default: BoudlaegOekonomiValidationRequest
+    opgoerelse:
+      x-namespace: dk.domstol.oas.common.doedsbo.opgoerelser
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/boudlaegOekonomi'
+      - $ref: '#/components/schemas/formueoversigt'
+      discriminator:
+        propertyName: typeDiscriminator
+    manuelDeltager:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      oneOf:
+      - $ref: '#/components/schemas/manuelPerson'
+      - $ref: '#/components/schemas/manuelPersonUdenCpr'
+      - $ref: '#/components/schemas/manuelVirksomhed'
+      - $ref: '#/components/schemas/manuelVirksomhedUdenCvr'
+      - $ref: '#/components/schemas/manuelAdgangsprofil'
+      discriminator:
+        propertyName: typeDiscriminator
+    manuelPerson:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - typeDiscriminator
+      properties:
+        cpr:
+          $ref: '#/components/schemas/cprNummer'
+        andenAdresse:
+          $ref: '#/components/schemas/adresse'
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        erUndtagetSkifteportalen:
+          type: boolean
+        tilknytDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+        fjernTilknyttedeDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: manuelPerson
+          maxLength: 100
+    manuelPersonUdenCpr:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - fornavn
+      - efternavn
+      - foedselsdato
+      - typeDiscriminator
+      properties:
+        fornavn:
+          type: string
+          maxLength: 100
+        efternavn:
+          type: string
+          maxLength: 100
+        foedselsdato:
+          type: string
+          format: date
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        erUndtagetSkifteportalen:
+          type: boolean
+        erNavneOgAdressebeskyttet:
+          type: boolean
+        tilknytDokumenter:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/id'
+        fjernTilknyttedeDokumenter:
+          maxItems: 100
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+        typeDiscriminator:
+          type: string
+          default: manuelPersonUdenCpr
+          maxLength: 100
+    manuelVirksomhed:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - cvr
+      - typeDiscriminator
+      properties:
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+        kontaktpersonFornavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEfternavn:
+          type: string
+          maxLength: 100
+        andenAdresse:
+          $ref: '#/components/schemas/adresse'
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        fritagetForBoafgift:
+          type: boolean
+        erUndtagetSkifteportalen:
+          type: boolean
+        tilknytDokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+        fjernTilknyttedeDokumenter:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/id'
+        journalnr:
+          type: string
+        typeDiscriminator:
+          type: string
+          default: manuelVirksomhed
+          maxLength: 100
+    manuelVirksomhedUdenCvr:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      type: object
+      required:
+      - virksomhedsnavn
+      - typeDiscriminator
+      properties:
+        virksomhedsnavn:
+          type: string
+          maxLength: 100
+        kontaktpersonFornavn:
+          type: string
+          maxLength: 100
+        kontaktpersonEfternavn:
+          type: string
+          maxLength: 100
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        erUndtagetSkifteportalen:
+          type: boolean
+        tilknytDokumenter:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/id'
+        fjernTilknyttedeDokumenter:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/id'
+        journalnr:
+          type: string
+        typeDiscriminator:
+          type: string
+          maxLength: 100
+          default: manuelVirksomhedUdenCvr
+    manuelAdgangsprofil:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - partnerId
+      properties:
+        partnerId:
+          $ref: '#/components/schemas/id'
+        email:
+          $ref: '#/components/schemas/email'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        journalnr:
+          type: string
+        andenAdresse:
+          $ref: '#/components/schemas/adresse'
+        typeDiscriminator:
+          type: string
+          default: manuelAdgangsprofil
+          maxLength: 100
+    eksterntUploadetDokument:
+      x-namespace: dk.domstol.oas.common.doedsbo
+      required:
+      - dokumentlagerId
+      - titel
+      properties:
+        titel:
+          type: string
+          maxLength: 255
+        dokumentlagerId:
+          $ref: '#/components/schemas/id'
+        dokumentType:
+          $ref: '#/components/schemas/dokumentType'
+  headers:
+    totalCount:
+      description: Det totale antal resultater i listen.
+      schema:
+        type: integer
+  responses:
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies: {
+    }

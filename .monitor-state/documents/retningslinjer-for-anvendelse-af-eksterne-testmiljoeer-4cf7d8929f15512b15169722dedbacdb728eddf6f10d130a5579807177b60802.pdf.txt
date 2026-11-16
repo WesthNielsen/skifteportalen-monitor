@@ -1,0 +1,81 @@
+Straffe- og skifteprogrammet
+DOMSTOLSSTYRELSEN • AMAGERFÆLLEDVEJ 56 • 2300 KØBENHAVN S • TELEFON 70 10 33 22 • POST@DOMSTOLSSTYRELSEN.DK
+CVR-NR. 21659509 • EAN.NR. 5798000161184
+Dato: 21. maj 2026
+Version.: 0.4
+Retningslinjer for anvendelse af eksterne testmiljøer til Skiftepor-
+talen eller Straffesagsportalen
+Tilslutning af API-brugere
+Denne vejledning beskriver retningslinjerne for anvendelse af det eksterne testmiljø. Følgende ge-
+nerelle retningslinjer er rettet mod dig, der anvender de eksterne testmiljøer til Skifteportalen (test-
+minskiftesag.net) eller Straffesagsportalen (straffesagsportalen.test-minskiftesag.net) til afprøvning
+af konfigurationer og integrationer. Retningslinjerne er til enhver tid gældende, og ved tilslutning til
+infrastrukturen forpligter du dig til at følge dem. Der kan gælde yderligere retningslinjer for individu-
+elle komponenter og integrationer rettet imod de enkelte releases i Straffe- og skifteprogrammet, så
+husk at læse den tilhørende dokumentation per release inden ibrugtagning.
+Det eksterne testmiljø tilgås i høj grad gennem selvbetjening. Det er vigtigt, at alle følger de retnings-
+linjer, der er angivet her, for at sikre et stabilt miljø med optimal kvalitet.
+Afprøvning i testmiljøet er en forudsætning for adgang til produktionsmiljøet
+Du skal have testet API integration i testmiljøet, før du kan tage den i brug i produktionsmiljøet.
+Denne retningslinje er indført for at undgå tilbageløb i produktionsmiljøet. Ved at teste integrationen
+i det eksterne testmiljø sikrer du, at du ved, hvordan integrationen fungerer. Du skal teste, hvilken
+opsætning der er nødvendig, hvilke kaldsmønstre der er påkrævet, og hvordan kald, sikkerhedsmo-
+del og data ser ud. Denne viden er nødvendig, før du er klar til at tage integrationen i brug i produk-
+tionsmiljøet med Skifteportalens produktionsdata eller i produktionsmiljøet med Straffesagsportalens
+produktionsdata.
+I forhold til Skifteportalen har løsningen en række funktioner, som du skal teste. Du skal som mini-
+mum teste de API-behov, som fremgår af din ansøgning om adgang til API testmiljøet, herunder
+opslag på dødsbo, registrering/hentning af krav, tilgodehavender, forespørgsler og/eller effektforteg-
+nelser samt upload af dokumentation i dødsbosager samt opslag på selskaber under tvangsopløs-
+ning, interaktioner på vegne af tilknyttet likvidator og registrering/hentning af krav og tilgodehavender
+i tvangsopløsningssager.
+I forhold til Straffesagsportalen skal du som minimum teste, at du kan hente hovedinformationer om
+sag, herunder sags-ID, sagstyper, information om, hvem advokaten repræsenterer, samt information
+om advokatens rolle på sagen. Derudover skal du teste, at dokumenter på sagen kan downloades.
+2
+Vilkår for anvendelse af testmiljøet
+Testdata
+Straffe- og skifteprogrammet anvender kun fiktive data i testmiljøet.
+Programmet udarbejder testdata, der stilles til rådighed i form af en række fiktive dødsboskiftesager
+og tvangsopløsningssager for Skifteportalen. Testdata i dødsboskiftesagerne kan bl.a. indeholde
+anmeldte krav, registrerede tilgodehavender, effekter og aktiver samt forespørgsler om kontaktper-
+sonen. I tvangsopløsningssagerne kan testdata bl.a. indeholde oprettede krav og tilgodehavender.
+Programmet udarbejder testdata, der stilles til rådighed i form af en række fiktive straffesager for
+Straffesagsportalen. Testdata i straffesagerne kan bl.a. indeholde sags-ID, sagstyper, advokatens
+rolle på sagen, og navn, rolle samt cpr.nr på klienten, der repræsenteres af advokaten. Testdata
+indeholder dokumenter til download.
+OBS: Du må ikke anvende testdata, der indeholder persondata, som gælder for rigtige personer,
+herunder navne, CPR-numre og andre personhenførbare informationer.
+Der kan forekomme testdata, som andre har oprettet i testmiljøet.
+Ved behov for koordinerede tests mellem flere parter, må du selv sikre dig, at der er en aftale om
+oprettelse og vedligehold af disse data, så du sikrer dig, at data ikke forsvinder, inden din test er
+gennemført.
+Data kan blive slettet eller opdateret af dem, der har oprettet dem. Der er generelt ingen garanti for,
+at andres data forbliver uændret i testmiljøet.
+Testmiljøets data kan blive ryddet efter behov, hvilket vi vil varsle minimum en uge i forvejen.
+Proces for tilslutning til testmiljøet
+Beskrivelse af proces
+1
+Hvis du er interesseret i at kunne gennemføre test ”op imod” Skifteportalens testmiljø, skal du
+udfylde en ansøgningsformular til at tilgå testmiljøet, som du finder her: https://www.dom-
+stol.dk/om-os/digitalisering/straffe-og-skifteprogrammet/skifteportalen/api-tilslutning-til-skifte-
+portalen/#api-tilslutning
+3
+Hvis du er interesseret i at kunne gennemføre test ”op imod” Straffesagsportalens testmiljø,
+skal du udfylde en ansøgningsformular til at tilgå testmiljøet, som du finder her:
+https://www.domstol.dk/selvbetjening/blanketter-og-vejledninger/straffesagsportalendk/api-
+tilslutning-til-straffesagsportalen/
+Den udfyldte ansøgningsformular sendes via Digital Post som angivet i formularen.
+Du er ansvarlig for, at de anførte oplysninger er korrekte.
+2 Straffe- og skifteprogrammet vurderer, om ansøgningen er korrekt udfyldt, og om der er et
+relevant formål med at få adgang til testmiljøet.
+3
+Hvis din ansøgning godkendes, udleverer Straffe- og skifteprogrammet en API-nøgle bestå-
+ende af et ’Client ID’ og en ’Client Secret’. Straffe- og skifteprogrammet behandler din ansøg-
+ning hurtigst muligt.
+4
+Du kan tilgå testmiljøet med ’Client ID’ og ’Client Secret’ samt med et registreret test
+OCES3 certifikat. Det er Digitaliseringsstyrelsen, som udsteder OCES3 certifikatet.
+Du skal overholde Integrationsvejledningen ved test. Straffe- og skifteprogrammet kan fjerne
+adgang til testmiljøet ved utilsigtet brug. Det udleverede ’Client ID’ og ’Client Secret’ må ikke
+deles eller videresendes til andre udenfor din egen organisation.

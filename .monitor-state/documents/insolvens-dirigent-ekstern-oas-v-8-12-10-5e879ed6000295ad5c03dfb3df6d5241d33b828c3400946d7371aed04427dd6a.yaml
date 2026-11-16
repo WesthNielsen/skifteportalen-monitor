@@ -1,0 +1,493 @@
+openapi: 3.0.3
+info:
+  title: API til dirigent forespørgsler for tvangsopløsningssager.
+  description: Denne specifikation er tiltænkt eksterne brugere af vores egen web-brugergrænseflade, uanset hvilken relation brugeren har til en given sag.
+  version: 8.12.10
+servers:
+  - url: 'http://localhost:8080'
+
+paths:
+  /insolvenssagerEkstern:
+    post:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: opretInsolvenssagEkstern
+      description: Opret en ny insolvenssag som ekstern bruger.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opretInsolvenssagEkstern'
+      responses:
+        201:
+          description: Insolvenssag er oprettet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/oprettetInsolvenssagEkstern'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: hentTvangsoploesningssag
+      description: Hent specifik tvangsopløsningssag udfra dets sag id (ikke sagsnummer).
+      responses:
+        200:
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/tvangsoploesningssagEkstern'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/sagens-gang:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+      - $ref: './imported/pagination/pagination.yaml#/components/parameters/page'
+      - $ref: './imported/pagination/pagination.yaml#/components/parameters/size'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: getSagensGangListe
+      description: Hent liste (side) af sagens gang hændelser som ekstern (pånær likvidator).
+      responses:
+        200:
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagensGangBegivenhed'
+          headers:
+            'X-Total-Count':
+              $ref: './imported/pagination/pagination.yaml#/components/headers/totalCount'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerTidlLedelse/{sagId}/erklaering:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: postErklaering
+      description: Indsend erklæring.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/erklaering'
+      responses:
+        201:
+          description: Erklæring er gemt.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/erklaering'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerTidlLedelse/{sagId}/kontaktoplysninger:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    put:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: updateKontaktoplysninger
+      description: Opdater kontaktoplysningerne for direktøren selv.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kontaktoplysningerOpdatering'
+      responses:
+        200:
+          description: Kontaktoplysninger er opdateret.
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/kaeremaal:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: opretKaeremaal
+      description: Opret kæremål som ekstern til sagen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opretKaeremaal'
+      responses:
+        201:
+          description: Kæremål oprettet succesfuldt.
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/afgoerelser:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: hentAfgoerelser
+      description: Hent en liste af afgørelser (retsbøger) på sagen.
+      responses:
+        200:
+          description: Liste af afgørelser på sagen hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/afgoerelse'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/krav:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      parameters:
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/page'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/size'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/sort'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/direction'
+      operationId: hentKrav
+      description: Hent en side af krav der matcher ønsket sortering, sammen med en samlet summering for alle krav.
+      responses:
+        200:
+          description: Side af krav hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kravListe'
+          headers:
+            'X-Total-Count':
+              $ref: './imported/pagination/pagination.yaml#/components/headers/totalCount'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/tilgodehavender:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      parameters:
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/page'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/size'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/sort'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/direction'
+      operationId: hentTilgodehavender
+      description: Hent en side af tilgodehavender der matcher ønsket sortering, sammen med en samlet summering for alle tilgodehavender.
+      responses:
+        200:
+          description: Side af tilgodehavender hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavendeListe'
+          headers:
+            'X-Total-Count':
+              $ref: './imported/pagination/pagination.yaml#/components/headers/totalCount'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/retsboeger:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      parameters:
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/page'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/size'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/sort'
+        - $ref: './imported/pagination/pagination.yaml#/components/parameters/direction'
+      operationId: hentRetsboeger
+      description: Hent en side af retsbøger der matcher ønsket sortering.
+      responses:
+        200:
+          description: Side af retsbøger hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/retsbogEkstern'
+          headers:
+            'X-Total-Count':
+              $ref: './imported/pagination/pagination.yaml#/components/headers/totalCount'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/meddelelser:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: hentMeddelelser
+      description: Hent alle meddelelser til brugeren på sagen.
+      responses:
+        200:
+          description: Meddelelser hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/detaljeretMeddelelse'
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /tvangsoploesningssagerEkstern/{sagId}/frister/{fristId}:
+    parameters:
+      - $ref: '#/components/parameters/sagId'
+      - $ref: '#/components/parameters/fristId'
+    post:
+      tags:
+        - insolvensDirigentEkstern
+      operationId: haandterFrist
+      description: Håndter manuelt oprettet frist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/besvarelseRequest'
+      responses:
+        201:
+          description: Besvarelse er gemt.
+        404:
+          description: Sagen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: './imported/apiErrors/apiErrors.yaml#/components/schemas/apiError'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+security:
+  - bearerAuth: [ ]
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    sagId:
+      name: sagId
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/id'
+    fristId:
+      name: fristId
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/id'
+
+  schemas:
+    opretInsolvenssagEkstern:
+      required:
+        - sagstype
+        - retskreds
+      properties:
+        sagstype:
+          $ref: '#/components/schemas/opretInsolvenssagTypeEkstern'
+        retskreds:
+          $ref: './imported/typer/typer.yaml#/components/schemas/embedskode'
+        dokumenter:
+          description: Liste af dokumenter der skal vedhæftes sagen ved oprettelse.
+          type: array
+          minItems: 1
+          items:
+            $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/insolvensDokument'
+        bemaerkning:
+          description: Eventuel bemærkning til sagen ved oprettelse.
+          type: string
+          minLength: 1
+          maxLength: 2000
+    oprettetInsolvenssagEkstern:
+      required:
+        - sagId
+        - sagsnummer
+      properties:
+        sagId:
+          type: string
+          format: uuid
+        sagsnummer:
+          type: string
+    opretInsolvenssagTypeEkstern:
+      type: string
+      enum:
+        - KONKURSBEGAERING
+        - GAELDSSANERING
+        - REKONSTRUKTION
+        - FOREBYGGENDE_REKONSTRUKTION
+        - AEGTEFAELLESKIFTE
+        - ANDRE_SAGER_EFTER_SELSKABSLOVEN
+    sagensGangBegivenhed:
+      required:
+        - oprettet
+        - foretagetAf
+        - beskrivelse
+      properties:
+        oprettet:
+          description: Tidspunkt hvor hændelsen fandt sted.
+          type: string
+          format: date-time
+        foretagetAf:
+          $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/haendelsePartEkstern'
+        beskrivelse:
+          description: En kort beskrivelse af hvilken hændelse der er tale om - ala en titel.
+          example: Anmodning om vidneafhøring
+          type: string
+    kontaktoplysningerOpdatering:
+      description: Oprettelse eller opdatering af kontaktoplysninger for direktøren selv.
+      properties:
+        kontaktoplysninger:
+          $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/kontaktoplysninger'
+    opretKaeremaal:
+      description: Data til oprettelse af et nyt kæremål.
+      required:
+        - afgoerelseId
+      properties:
+        afgoerelseId:
+          description: Id på den afgørelse (retsbog) som der ønskes kæret.
+          type: string
+          format: uuid
+        paastand:
+          description: Fritekstangivelse af hvad og hvorfor man ønsker at kære.
+          type: string
+          maxLength: 1200
+        begrundelse:
+          description: Fritekstangivelse for hvorfor skifterettens afgørelse skal ændres.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Bilag der underbygger den kærendes påstand. Hvis ingen bilag sendes tom liste, ikke null.
+          type: array
+          items:
+            $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/dokumentReference'
+    afgoerelse:
+      description: Data om hver afgørelse der er truffet i sagen.
+      required:
+        - afgoerelseId
+        - afgoerelseTitel
+      properties:
+        afgoerelseId:
+          description: Id på den afgørelse (retsbog) som der ønskes kæret.
+          type: string
+          format: uuid
+        afgoerelseTitel:
+          description: Titlen på afgørelsen, der er sigende for den afgørelse der er truffet.
+          type: string
+          maxLength: 200
+    kravListe:
+      description: En pagineret liste af krav sammen med en total sum af alle krav som brugeren må se (på tværs af paginerede sider).
+      required:
+        - krav
+        - totalSum
+      properties:
+        krav:
+          description: En (pagineret) side af krav for brugeren.
+          type: array
+          items:
+            $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/kravListItem'
+        totalSum:
+          description: Samlet sum af alle krav for brugeren på tværs af paginerede sider.
+          type: number
+    tilgodehavendeListe:
+      description: En pagineret liste af tilgodehavender sammen med en total sum af alle tilgodehavender som brugeren må se (på tværs af paginerede sider).
+      required:
+        - tilgodehavender
+        - totalSum
+      properties:
+        tilgodehavender:
+          description: En (pagineret) side af tilgodehavender for brugeren.
+          type: array
+          items:
+            $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/tilgodehavendeListItem'
+        totalSum:
+          description: Samlet sum af alle tilgodehavender for brugeren på tværs af paginerede sider.
+          type: number
+    besvarelseRequest:
+      description: Besvarelse med fritekst og bilag. Hvis ingen bilag vedlægges bliver fritekst krævet.
+      properties:
+        fritekst:
+          type: string
+          minLength: 3
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som ekstern bruger ønsker at uploade til at understøtte sin besvarelse. Hvert bilag uploades først til dokumentlageret, og det returnerede tekniske ID/reference for dokumentet anvendes her.
+          type: array
+          items:
+            $ref: './imported/insolvens/insolvens-common.yaml/#/components/schemas/dokumentReference'

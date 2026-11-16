@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: API til dokument lager som ekstern.
+  description: API til dokument lager som ekstern.
+  version: 2.0.19
+servers:
+- url: http://localhost:8080
+paths:
+  /dokumenterEkstern:
+    post:
+      deprecated: true
+      tags:
+      - dokumentLagerEkstern
+      operationId: add
+      description: Opret et dokument.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              title: nytDokument
+              required:
+              - navn
+              - dokument
+              - type
+              properties:
+                navn:
+                  description: Navnet på det uploadede dokument. Vil være synligt
+                    som titel på dokumentet samt som navn på dokumentet ved download.
+                  type: string
+                  maxLength: 1000
+                dokument:
+                  description: Indholdet af dokumentet (bytes) der er base64 encoded.
+                  type: string
+                  format: base64
+                type:
+                  description: Dokumentets content-type.
+                  type: string
+                  maximum: 129
+      responses:
+        201:
+          description: Dokumentet er tilknyttet sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dokument'
+          headers:
+            location:
+              schema:
+                type: string
+              required: true
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/dokumenterEkstern:
+    post:
+      tags:
+      - dokumentLagerEkstern
+      operationId: addV2
+      description: Opret et dokument.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/dokumentFilnavn'
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              description: Bilagets binære indhold oversendes som request body. Indholdet
+                scannes og formatet genkendes automatisk.
+              type: string
+              format: binary
+      responses:
+        201:
+          description: Dokumentet er modtaget og kan tilknyttes sager, henvendelser
+            m.v.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dokument'
+          headers:
+            location:
+              schema:
+                type: string
+              required: true
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /dokumenterEkstern/{dokumentId}:
+    parameters:
+    - $ref: '#/components/parameters/dokumentId'
+    get:
+      tags:
+      - dokumentLagerEkstern
+      operationId: get
+      description: Dokumentets metadata. Se mere om indholdet heraf under beskrivelsen
+        for dokument.
+      responses:
+        200:
+          description: Dokument metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dokument'
+        404:
+          description: Dokumentet eksister ikke.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /dokumenterEkstern/{dokumentId}/dokument:
+    parameters:
+    - $ref: '#/components/parameters/dokumentId'
+    get:
+      tags:
+      - dokumentLagerEkstern
+      operationId: getBase64
+      deprecated: true
+      description: Returner det binære dokument (indholdet) som base64.
+      responses:
+        200:
+          description: Binær dokument.
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: base64
+        404:
+          description: Dokumentet eksister ikke.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /dokumenterEkstern/{dokumentId}/fil:
+    parameters:
+    - $ref: '#/components/parameters/dokumentId'
+    get:
+      tags:
+      - dokumentLagerEkstern
+      operationId: getFil
+      summary: Hent specifikt dokument som binær fil.
+      responses:
+        200:
+          $ref: '#/components/responses/fil'
+        '404':
+          description: Dokumentet findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    head:
+      tags:
+      - dokumentLagerEkstern
+      operationId: headFil
+      summary: Hent specifikt dokument (uden content).
+      responses:
+        '200':
+          $ref: '#/components/responses/filHead'
+        '404':
+          description: Dokumentet findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+security:
+- bearerAuth: [
+    ]
+components:
+  parameters:
+    dokumentId:
+      description: Teknisk ID på dokumentet. Fås ved oprettelse af dokumentet, samt
+        ved fremsøgning af en specifik sag.
+      in: path
+      required: true
+      name: dokumentId
+      schema:
+        $ref: '#/components/schemas/dokumentId'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  headers:
+    X-Domstol-SHA-256:
+      description: En hexadecimal SHA-256 hash af response content body. Bliver kun
+        returneret af dokumenter hvor SHA-256 hash blev beregnet ved upload.
+      required: false
+      schema:
+        type: string
+        format: hexadecimal
+  schemas:
+    dokumentId:
+      description: Dokumentets udstillede id.
+      type: string
+      format: uuid
+    dokument:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/dokumentId'
+        navn:
+          type: string
+        oprettet:
+          type: string
+          format: date-time
+        stoerelse:
+          type: integer
+        type:
+          type: string
+          maxLength: 1024
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+          description: |
+            Map af metadata vil altid beskrive hvem der har oprettet dokumentet, således: ENTEN: 'oprettet_af' - Vil angive navnet på opretteren af dokumentet, fx Retten i Roskilde ELLER: 'oprettet_af_part_type' - Angiver typen på den eksterne part der har oprettet dokumentet, enten 'person' eller 'virksomhed'. PartId anvendes til at hente oplysninger om parten i den relevante service. 'oprettet_af_part_id' - Angiver id på den eksterne part der har oprettet dokumentet. Ved type 'person' fås 'personId', ved type 'virksomhed' fås 'cvr'.
+    dokumentFilnavn:
+      type: string
+      pattern: ^(attachment; )?filename="[\w-_æøåÆØÅ()]+[\w\s-_æøåÆØÅ()]{1,200}\.[pP][dD][fF]"$
+      description: Formatet for navnet på et bilag.
+      example: filename="dokumentation.pdf"
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+  responses:
+    fil:
+      description: Filen returneres binært. Navnet findes i "Content-Disposition"-headeren.
+      headers:
+        Content-disposition:
+          description: Navnet på bilaget.
+          required: true
+          schema:
+            type: string
+        Content-type:
+          description: Type af fil.
+          required: true
+          schema:
+            type: string
+        X-Domstol-SHA-256:
+          $ref: '#/components/headers/X-Domstol-SHA-256'
+      content:
+        '*/*':
+          schema:
+            description: Den binære fil.
+            type: string
+            format: binary
+    filHead:
+      description: |
+        Headers for en binær fil.
+        Filnavn findes i 'Content-Disposition' headeren.
+        Indholdstype findes i 'Content-Type' headeren.
+        Længden vil oftest være kendt, og vil i det tilfælde returneres i 'Content-Length', og 'Accept-Ranges' vil være sat.
+      headers:
+        Content-disposition:
+          description: Navnet på bilaget.
+          required: true
+          schema:
+            type: string
+        X-Domstol-SHA-256:
+          $ref: '#/components/headers/X-Domstol-SHA-256'
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies: {
+    }

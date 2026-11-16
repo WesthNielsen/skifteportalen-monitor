@@ -1,0 +1,38 @@
+Ansøgning om yderligere testdata til API-test
+imod Skifteportalen
+Denne formular anvendes til at søge om yderligere testdata, hvis Domstolsstyrelsen
+har givet dig/jer adgang til API-test imod Skifteportalen.
+Den udfyldte formular skal fremsendes til ssp-api@domstolsstyrelsen.dk
+I. Om ansøgeren
+Organisationens navn: _________________________________________________
+Organisationens CVR-nummer: __________________________________________
+Kontaktoplysninger
+Navn_________________________________________________________________
+E-mail________________________________________________________________
+Telefonnummer________________________________________________________
+II. Behov for testdata
+a. Der ønskes testdata til følgende sagstyper:
+Skifte af dødsboer
+Tvangsopløsning
+Forebyggende rekonstruktion
+Rekonstruktion
+Konkurs
+Gældssanering
+Ægtefælleskifte
+Andre sager efter selskabsloven (reassumption, udnævnelse af
+granskningsmænd, udpegelse af vurderingsmænd og anmodning om
+tvangsopløsning fra mindretalskapitalejere)
+2
+b. Beskriv det produkt, der udvikles som resultat af API-adgangen, samt
+anvendelsen (beskriv kort hvilke API-endpoints eller funktioner, der for-
+ventes anvendt).
+III. Vilkår for anvendelse af testdata
+Domstolsstyrelsen leverer testdata.
+a. Indforstået med at du ikke må anvende testdata, der indeholder person-
+data, som gælder for rigtige personer, herunder navne, CPR-numre og
+andre personhenførbare informationer:
+Ja, indforstået
+Når du udfylder følgende formular, har Domstolsstyrelsen ansvaret for,
+at dine oplysninger behandles og opbevares forsvarligt – indenfor ram-
+merne af EU’s databeskyttelsesforordning.
+Læs mere om Domstolsstyrelsens behandling af persondata på domstol.dk

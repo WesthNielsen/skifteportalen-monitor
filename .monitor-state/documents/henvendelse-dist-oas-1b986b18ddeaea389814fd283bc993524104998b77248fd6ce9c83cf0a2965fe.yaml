@@ -1,0 +1,725 @@
+openapi: 3.0.3
+info:
+  title: API for Henvendelser
+  description: Fælles API for behandling af henvendelser(beskeder) og tråde mellem
+    deltagere og retterne.
+  version: 2.1.0
+servers:
+- url: http://localhost:8080
+paths:
+  /henvendelseTraade:
+    get:
+      tags:
+      - henvendelse
+      operationId: hentHenvendelseTraadeForSag
+      description: Hent alle tråde for et sagsId. Henvendelser returneres IKKE.
+      parameters:
+      - in: query
+        name: sagsId
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Id for sagen som der skal hentes henvendelsestråde for.
+      responses:
+        '200':
+          description: Trådene blev hentet med success.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/henvendelseTraad'
+        '404':
+          description: Det angivne sagsId findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /henvendelseTraade/{traadId}:
+    parameters:
+    - $ref: '#/components/parameters/traadId'
+    get:
+      tags:
+      - henvendelse
+      operationId: hentHenvendelseTraad
+      description: Hent tråden med angivne id.
+      responses:
+        '200':
+          description: Tråden blev hentet med success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/henvendelseTraad'
+        '404':
+          description: Henvendelsestråden findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - henvendelse
+      operationId: opdaterHenvendelseTraad
+      description: Opdater properties på eksisterende tråd. Det er udelukkende 'erAfsluttet'
+        som kan opdateres. Andre properties ignoreres.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/putHenvendelseTraad'
+      responses:
+        '200':
+          description: Tråden blev opdateret med success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/henvendelseTraad'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /henvendelseTraade/{traadId}/henvendelser/{henvendelseId}:
+    parameters:
+    - $ref: '#/components/parameters/traadId'
+    - $ref: '#/components/parameters/henvendelseId'
+    get:
+      summary: Henter en henvendelse med angivne id.
+      tags:
+      - henvendelse
+      operationId: hentHenvendelse
+      description: Hent henvendelsen med angivne id.
+      responses:
+        '200':
+          description: Henvendelsen blev hentet med success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/henvendelse'
+        '404':
+          description: Henvendelsen findes ikke.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - henvendelse
+      operationId: opdaterHenvendelse
+      description: Opdater properties på eksisterende henvendelse. Det er udelukkende
+        'laeseStatus' som kan opdateres. Andre properties ignoreres.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/putHenvendelse'
+      responses:
+        '200':
+          description: Henvendelsen blev opdateret med success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/henvendelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+components:
+  schemas:
+    putHenvendelse:
+      required:
+      - laeseStatus
+      properties:
+        laeseStatus:
+          $ref: '#/components/schemas/laeseStatus'
+    putHenvendelseTraad:
+      required:
+      - erAfsluttet
+      properties:
+        erAfsluttet:
+          type: boolean
+    fritekstAdresse:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common
+      required:
+      - adresselinje1
+      - landekode
+      properties:
+        adresselinje1:
+          type: string
+          maxLength: 200
+        adresselinje2:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    landekodeEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - AF
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - AR
+      - AM
+      - AW
+      - AZ
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BY
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - IO
+      - VG
+      - BN
+      - BG
+      - BF
+      - BI
+      - KH
+      - CM
+      - CA
+      - KY
+      - CF
+      - CL
+      - CC
+      - CO
+      - KM
+      - CD
+      - CG
+      - CK
+      - CR
+      - CU
+      - CW
+      - CY
+      - DK
+      - DJ
+      - DM
+      - DO
+      - EC
+      - EG
+      - SV
+      - CI
+      - ER
+      - EE
+      - SZ
+      - ET
+      - FK
+      - FJ
+      - PH
+      - FI
+      - AE
+      - FR
+      - GF
+      - PF
+      - TF
+      - FO
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - CX
+      - CV
+      - KZ
+      - KE
+      - CN
+      - KG
+      - KI
+      - HR
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NL
+      - NP
+      - NZ
+      - NI
+      - NE
+      - NG
+      - NU
+      - KP
+      - MK
+      - MP
+      - NF
+      - 'NO'
+      - NC
+      - OM
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PN
+      - PL
+      - PT
+      - PR
+      - QA
+      - RE
+      - RO
+      - RU
+      - RW
+      - SB
+      - WS
+      - SM
+      - ST
+      - SA
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - BL
+      - SH
+      - KN
+      - LC
+      - SX
+      - PM
+      - VC
+      - SK
+      - SI
+      - SO
+      - ES
+      - LK
+      - MF
+      - GB
+      - SD
+      - SR
+      - SJ
+      - SE
+      - ZA
+      - GS
+      - KR
+      - SS
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TD
+      - TH
+      - CZ
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TC
+      - TV
+      - TR
+      - DE
+      - UG
+      - UA
+      - HU
+      - UY
+      - US
+      - UM
+      - UZ
+      - VU
+      - VA
+      - VE
+      - EH
+      - VN
+      - WF
+      - YE
+      - ZM
+      - ZW
+      - GQ
+      - AT
+      - TL
+      - AX
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    id:
+      type: string
+      format: uuid
+    cvrNummer:
+      type: string
+      pattern: ^[1-9][0-9]{7}$
+    personReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til person som har og kan identificeres med et CPR-nr.
+      required:
+      - personId
+      properties:
+        personId:
+          $ref: '#/components/schemas/id'
+    virksomhedReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til virksomhed.
+      required:
+      - cvrNummer
+      properties:
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+    professionelReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til professionel medarbejder.
+      required:
+      - cvrNummer
+      - persistentId
+      properties:
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+        persistentId:
+          type: string
+    apiReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til partner profil api deltager delegation token. Specialisering
+        af partnerReference.
+      required:
+      - partnerNavn
+      - partnerId
+      - apiDeltagerId
+      properties:
+        partnerNavn:
+          type: string
+          maxLength: 200
+        partnerId:
+          $ref: '#/components/schemas/id'
+        apiDeltagerId:
+          type: string
+          description: Partner profil deltager id (api_deltager) i delegation token.
+    fritekstPart:
+      x-namespace: dk.domstol.oas.common
+      description: Fritekst part (person) givet ved et navn og en adresse. Benyttes
+        når personen ikke har et CPR-nr.
+      required:
+      - navn
+      - adresse
+      properties:
+        navn:
+          type: string
+          maxLength: 200
+        adresse:
+          $ref: '#/components/schemas/fritekstAdresse'
+    internReference:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - adId
+      properties:
+        adId:
+          type: string
+    partnerReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til partner med et partnerId i partner registeret.
+      required:
+      - partnerId
+      properties:
+        partnerId:
+          $ref: '#/components/schemas/id'
+    anvenderPartTypeEnum:
+      x-namespace: dk.domstol.oas.common
+      description: Typen af en anvenderPart. Person givet ved personId, virksomhed
+        givet ved CVR-nummer, udenlandsk virksomhed eller person, partner ved partnerId
+        eller system.
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - UDENLANDSK
+      - INTERN
+      - PARTNER
+      - PROFESSIONAL
+      - API
+      - SYSTEM
+    systemPart:
+      required:
+      - name
+      properties:
+        name:
+          type: string
+    anvenderPart:
+      x-namespace: dk.domstol.oas.common
+      description: Repræsentation af en part som kan anvende systemet.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/anvenderPartTypeEnum'
+        person:
+          $ref: '#/components/schemas/personReference'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        fritekst:
+          $ref: '#/components/schemas/fritekstPart'
+        intern:
+          $ref: '#/components/schemas/internReference'
+        partner:
+          $ref: '#/components/schemas/partnerReference'
+        professionel:
+          $ref: '#/components/schemas/professionelReference'
+        api:
+          $ref: '#/components/schemas/apiReference'
+        system:
+          $ref: '#/components/schemas/systemPart'
+    henvendelse:
+      x-namespace: dk.domstol.oas.common
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sagId:
+          type: string
+          format: uuid
+          readOnly: true
+        traadId:
+          type: string
+          format: uuid
+        emneord:
+          type: string
+          format: string
+          readOnly: true
+        tekst:
+          type: string
+          format: string
+          maxLength: 3000
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/henvendelseDokument'
+        oprettet:
+          type: string
+          format: date-time
+          readOnly: true
+        oprettetAfNavnTitel:
+          type: string
+          format: string
+          readOnly: true
+        oprettetAf:
+          readOnly: true
+          $ref: '#/components/schemas/anvenderPart'
+        laeseStatus:
+          $ref: '#/components/schemas/laeseStatus'
+        laeseStatusAendret:
+          type: string
+          format: date-time
+          readOnly: true
+        laeseStatusAendretAfNavnTitel:
+          type: string
+          format: string
+          readOnly: true
+        laeseStatusAendretAf:
+          readOnly: true
+          $ref: '#/components/schemas/anvenderPart'
+    henvendelseTraad:
+      x-namespace: dk.domstol.oas.common
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sagId:
+          type: string
+          format: uuid
+        emneord:
+          type: string
+          format: string
+        henvendelser:
+          type: array
+          items:
+            $ref: '#/components/schemas/henvendelse'
+        antalHenvendelser:
+          type: integer
+          minimum: 1
+          readOnly: true
+        harDokumenter:
+          type: boolean
+          readOnly: true
+        oprettet:
+          type: string
+          format: date-time
+          readOnly: true
+        oprettetAfNavnTitel:
+          type: string
+          format: string
+          readOnly: true
+        oprettetAf:
+          readOnly: true
+          $ref: '#/components/schemas/anvenderPart'
+        harUlaesteHenvendelser:
+          type: boolean
+          readOnly: true
+        afsluttet:
+          type: string
+          format: date-time
+          readOnly: true
+        afsluttetAf:
+          readOnly: true
+          $ref: '#/components/schemas/anvenderPart'
+        erAfsluttet:
+          type: boolean
+          readOnly: true
+    henvendelseDokument:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - dokumentId
+      - filnavn
+      properties:
+        dokumentId:
+          type: string
+          format: uuid
+        navn:
+          type: string
+          format: string
+        filnavn:
+          type: string
+          format: string
+        type:
+          type: string
+          enum:
+          - OEVRIGE
+          - TESTAMENTE
+    laeseStatus:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ULAEST
+      - LAEST
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: string
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      type: string
+  parameters:
+    traadId:
+      name: traadId
+      in: path
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Id på henvendelsestråden som skal hentes eller opdateres.
+    henvendelseId:
+      name: henvendelseId
+      in: path
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Id på henvendelsen som skal hentes eller opdateres.
+  headers: {
+    }
+  responses:
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies: {
+    }

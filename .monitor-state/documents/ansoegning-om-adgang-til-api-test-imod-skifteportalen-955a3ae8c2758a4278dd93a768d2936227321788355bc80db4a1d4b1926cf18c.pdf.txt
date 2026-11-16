@@ -1,0 +1,74 @@
+Ansøgning om adgang til API-test imod
+Skifteportalen
+Den udfyldte formular skal fremsendes til Straffe- og skifteprogrammet via Digital Post:
+1. Vælg 'Skriv ny besked'
+2. Vælg 'Vælg myndighed'
+3. Vælg 'Statslige myndigheder'
+4. Vælg 'Domstolsstyrelsen'
+5. Vælg 'Vælg kategori'
+6. Vælg 'Domstolsstyrelsen'
+7. Vælg 'API-adgang til Skifteportalen’
+8. Udfyld 'Dit emne': 'Ansøgning om API-adgang til Skifteportalens testmiljø’ og ved-
+hæft ansøgningen til beskeden, hvorefter den sendes.
+Direkte link til Digital Post for virksomheder:
+https://virk.dk/digitalpost/new/d7c36250-6582-47c0-8007-9dcd679a546d/91270fac-f527-47d2-
+8970-fe9504162436/
+I. Om ansøgeren
+Organisationens navn: _________________________________________________
+Organisationens CVR-nummer: __________________________________________
+Kontaktperson
+Navn_________________________________________________________________
+E-mail________________________________________________________________
+Telefonnummer________________________________________________________
+Teknisk kontaktperson
+Navn_________________________________________________________________
+E-mail________________________________________________________________
+Hvilken metode ønsker du/I at anvende (der kan kun vælges én af nedenstående):
+Organisationscertifikat OCES3
+Organisationscertifikat OCES3 underskrevet JWT
+2
+II. Om ansøgerens formål med integration
+a. Beskriv formålet med og behovet for API-tilslutningen.
+b. Beskriv det produkt, der udvikles som resultat af API-adgangen, samt
+anvendelsen (beskriv kort hvilke API-endpoints eller funktioner, der for-
+ventes anvendt).
+Integrationens rolle:
+c. Til virksomhedens egen brug?
+Ja Nej
+d. Til brug på kunders vegne?
+(fx bankcenter, SaaS løsning til advokater etc.)
+Ja Nej
+3
+III. Behov for testdata
+a. Der ønskes testdata til følgende sagstyper:
+Skifte af dødsboer
+Tvangsopløsning
+Forebyggende rekonstruktion
+Rekonstruktion
+Konkurs
+Gældssanering
+Ægtefælleskifte
+Andre sager efter selskabsloven (reassumption, udnævnelse af
+granskningsmænd, udpegelse af vurderingsmænd og anmodning om
+tvangsopløsning fra mindretalskapitalejere)
+IV. Tekniske tilslutningsoplysninger
+a. API-kundens udgående IP-adresser for kald til skifteportalens testmiljø
+(fx i formen 101.102.103.104 eller 105.106.107.0/24):
+_________________________________________________________
+b. Hvilke(t) CVR-nummer/numre vil de anvendte virksomhedscertifikater
+have: (fx kan det være jeres eget CVR-nummer, eller CVR-numre på
+virksomheder, I vil kalde API’erne på vegne af):
+_________________________________________________________
+V. Vilkår for anvendelse af testdata
+Domstolsstyrelsen leverer testdata.
+a. Indforstået med at du ikke må anvende testdata, der indeholder person-
+data, som gælder for rigtige personer, herunder navne, CPR-numre og
+andre personhenførbare informationer:
+Ja, indforstået
+Hvis der er givet adgang til API-testmiljøet, skal der senest 6 måneder
+efter søges om adgang til API-tilslutning til produktion, ellers vil adgan-
+gen til API-testmiljøet blive lukket.
+Når du udfylder følgende formular, har Domstolsstyrelsen ansvaret for,
+at dine oplysninger behandles og opbevares forsvarligt – indenfor ram-
+merne af EU’s databeskyttelsesforordning.
+Læs mere om Domstolsstyrelsens behandling af persondata på domstol.dk

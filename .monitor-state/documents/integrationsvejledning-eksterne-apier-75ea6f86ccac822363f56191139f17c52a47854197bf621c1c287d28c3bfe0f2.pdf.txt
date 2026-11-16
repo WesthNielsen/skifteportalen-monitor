@@ -1,0 +1,1234 @@
+API-tilslutning til
+Skifteportalen og
+Straffesagsportalen
+Teknisk Integrationsvejledning
+November 2026
+2
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Indholdsfortegnelse
+Indholdsfortegnelse......................................................................................................................... 2
+1. Introduktion ....................................................................................................................... 4
+1.1 Ændringsoversigt .............................................................................................................. 4
+1.2 Begreber ........................................................................................................................... 5
+2. API-understøttede forretningsgange.................................................................................. 8
+2.1 Forretningsmæssig kontekst ............................................................................................. 8
+2.2 Vilkår for API-adgang til domstolenes Skifteportal og Straffesagsportal............................. 9
+2.3 API-adgangsmæssig kontekst......................................................................................... 10
+2.4 Anvendelse af Postman med OpenAPI Specification (OAS)............................................ 12
+2.5 Roller i API-tilslutninger (direkte anvendelse) .................................................................. 12
+2.6 API-adgang for delegeret anvendelse ............................................................................. 13
+2.7 Sikker anvendelse af sagsdata i egne systemer.............................................................. 14
+3. API-loginprocesser .......................................................................................................... 15
+3.1 Login og kald med direkte token-anvendelse................................................................... 15
+Trin 1: Token request (variant A) ..................................................................................... 15
+Trin 1.1: Alternativ autentificeringsmekanisme (variant B) ............................................... 18
+Trin 2: Token response ................................................................................................... 20
+3.2 Login og kald med indirekte tokenanvendelse ................................................................. 20
+Forberedelse i Profiladministrationen .............................................................................. 21
+Overblik over proces for tokenudveksling ........................................................................ 24
+Trin 3: Token exchange................................................................................................... 25
+Trin 4: Nyt access token returneres................................................................................. 26
+4. Forretningsunderstøttelse igennem API-kald................................................................... 27
+4.1 Generelt om API servicekald ........................................................................................... 27
+4.2 Miljøer ............................................................................................................................. 27
+Anskaffelsen af det rigtige OCES3 test certifikat ............................................................. 27
+4.3 API-anvendelse på dødsboskiftesager ............................................................................ 28
+Trin 3: Request til services .............................................................................................. 28
+Trin 4: Response fra services.......................................................................................... 28
+Kvitteringer på anmeldelser til et dødsbo......................................................................... 29
+Upload og download af bilag i en dødsbojournal ............................................................. 30
+Regler for uploadede PDF-dokumenter ........................................................................... 31
+API Fejlkoder................................................................................................................... 31
+3
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+4.4 Integrationsguide for betaling af boafgift.......................................................................... 33
+Proces for integration og Open-Api-Specifikationer ......................................................... 33
+Find dødsbo .................................................................................................................... 34
+Oplys om de begunstigede.............................................................................................. 34
+Oplys om boafgiftsberegning........................................................................................... 34
+Korriger boafgiftsberegning ............................................................................................. 34
+Selve boafgiftsbetalingen ................................................................................................ 34
+Format af PDF’er............................................................................................................. 35
+Selve betalingen.............................................................................................................. 35
+Testdata .......................................................................................................................... 35
+4.5 API-adgang til sager om insolvens, tvangsopløsning og ægtefælleskifte......................... 35
+Tværgående funktioner for alle syv sagstyper (/v2/insolvenssagerEkstern)..................... 36
+Krav og tilgodehavender i tvangsopløsningssager (/v2/tvangsoploesningssagerEkstern) 36
+Token-anvendelse og adgang som professionel aktør (likvidator, kurator m.fl.)............... 37
+API Fejlkoder................................................................................................................... 37
+4.6 API-adgang til straffesager .............................................................................................. 38
+4.7 API-adgang til støtteservices........................................................................................... 38
+Sagshylde-API ................................................................................................................ 38
+Person-API...................................................................................................................... 39
+Virksomhed-API .............................................................................................................. 39
+Adresseinformationer og adresse-API ............................................................................. 39
+Retskreds-API ................................................................................................................. 39
+Dokumentlager-API ......................................................................................................... 39
+5. Ændringer & API-versionering......................................................................................... 40
+5.1 Større ændringer – ”Major”.............................................................................................. 41
+5.2 Mindre ændringer – ”Minor”............................................................................................. 41
+5.3 Løbende fejlrettelser – ”Patch” ........................................................................................ 41
+5.4 Undtagelser..................................................................................................................... 41
+6. Fejlhåndtering og teknisk support.................................................................................... 41
+4
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+1. Introduktion
+Denne vejledning er tiltænkt de it-kyndige hos API-anvendere af domstolenes Skifteportal og Straf-
+fesagsportal, altså den juridiske person, der påtænker at udvikle integrationer til API’erne for Skif-
+teportalen eller Straffesagsportalen.
+Vejledningen beskriver API-integration til domstolenes Skifteportal og Straffesagsportal, eksemplifi-
+ceret i tilslutningen til det eksterne testmiljø, som stilles til rådighed i forbindelse med tilslutning til
+domstolenes API-adgang til Skifteportalen og Straffesagsportalen. Se i øvrigt pkt. 1 i sektion 2.2
+Vilkår for API-adgang til domstolenes Skifteportal og Straffesagsportalen.
+Før API-anvenderen kan benytte integrationen i produktionsmiljøet, skal der være ansøgt om ad-
+gang til testmiljøet samt foretaget test af API’et. Derefter skal API-anvenderen ansøge om adgang
+til produktionsmiljøet. Hvis ansøgningen er godkendt, vil API-anvenderen få udstedt en gyldig API-
+nøgle til produktionsmiljøet (bestående af et ”Client ID” og en ”Client Secret” til anvenderen).
+Client ID og Client Secret sendes separat til ansøgerens digitale post. Hvis API-nøglen mistes, skal
+API-anvenderen henvende sig på samme måde som ved ansøgningsprocessen, hvorefter der ud-
+stedes en ny API-nøgle.
+Der benyttes samme integrationsmekanismer på de to områder, men API-anvendelse skal godken-
+des selvstændigt: Hvis en API-anvender har API-tilslutning til fx skifteområdet, men også ønsker
+adgang til straffesagerne, skal der sendes en ny ansøgning vedrørende straffeområdet om tilslut-
+ning til API test og efterfølgende til API i produktion.
+1.1 Ændringsoversigt
+Udgave Ændring
+2023 august Oprindelig udgave for Dødsbosager
+2024 maj Tvangsopløsningssager tilføjet
+2025 oktober Sproglige justeringer
+Opdaterede vejledninger
+2026 juni Sproglige justeringer
+Udvidelse af vejledningen om boafgift 4.4 samt opdatering af 5
+2026 august Udvidelse til at dække API for straffesager
+2026 november Udvidelse af insolvens eksternt API (V2) med alle syv sagstyper samt samling
+af kreditor- og likvidator-API.
+5
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+1.2 Begreber
+I vejledningen anvendes følgende relevante begreber samt forkortelser. Nedenstående tabel be-
+skriver disse begreber samt forkortelser.
+Begreb Beskrivelse
+API-anvender Virksomhed eller myndighed, der ansøger om adgang til Domstole-
+nes API’er for skifte- og strafferet, og efterfølgende kalder API’et på
+egne eller kunders vegne. Også uformelt omtalt som ”API-kunde”.
+OpenAPI specifikation Dette er en standard for specifikation af HTTP-API’er. Domstolenes
+Skifteportal og Straffesagsportal API’er er specificeret i version
+3.0.3 af OpenAPI.
+Open ID Connect (OIDC) Standard til at autentificere brugere.
+OCES3 organisationscerti-
+fikat
+Certifikat som er udstedt til en virksomhed. OCES3 certifikater kan
+enten udstedes til anvendelse i produktion eller til testformål.
+Skifteportalen IT-systemet som understøtter dødsbo- og insolvenssager
+Straffesagsportalen IT-systemet som understøtter straffesager
+Dødsbosag En sag i Skifteportalen, som knytter sig til en afdød.
+Dødsbojournal En resurse som har en 1:1-relation til en dødsbosag, hvorunder
+man finder følgende resurser:
+1. Krav
+2. Tilgodehavende
+3. Effektfortegnelser
+4. Forespørgsler
+5. Proformaopgørelser
+Dokumentlager Adgangsstyret opbevaring af dokumenter.
+Tvangsopløsningssag Entitet som indeholder metadata om en sag vedrørende tvangsop-
+løsning af et selskab.
+Anmelder En bruger, som anmelder krav, tilgodehavende mv. på Skifteporta-
+len i en dødsboskiftesag eller tvangsopløsningssag.
+6
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Begreb Beskrivelse
+Effektfortegnelse (til
+dødsbo)
+Oversigt over afdødes aktiver og effekter, som kan ses på Skifte-
+portalen af kontaktperson/bobestyrer i et dødsbo.
+Krav Krav om penge, som en kreditor har til gode i boet/selskabet.
+Tilgodehavende Tilkendegivelse om penge, som boet/selskabet har til gode.
+Forespørgsel (til dødsbo) En forespørgsel er et ønske om at få oplysninger om boets kontakt-
+person. Skifteretten vurderer forespørgerens retlige interesse, in-
+den oplysningerne videregives.
+API-bruger Bruger som direkte eller indirekte tilgår domstolenes Skifteportal el-
+ler Straffesagsportal via API (modsat dem som bruger de respek-
+tive portalers webgrænseflade).
+Access-token En token, der udstedes som en del af autorisationsflowet, og som
+midlertidigt giver en API-anvender adgang til ressourcer.
+Direkte access-token Når en API-anvender foretager et login request via den udleverede
+API-nøgle sammen med et klientcertifikat og derved opnår et ac-
+cess-token for at agere som den virksomhed, klientcertifikatet er
+udstedt til.
+Delegeret access-token Et token, der udstedes ved at en API-anvender veksler et direkte
+access-token til et nyt token, der agerer på vegne af en udnævnt
+likvidator via dennes adgangsprofil.
+Adgangsprofil En registrering af en profil til fx en udpeget sagsaktør, fx en for-
+svarsadvokat, bobestyrer eller likvidator (typisk en advokat).
+En adgangsprofil har en ejer og kan have deltagere registreret med
+deres rettigheder i forhold til sager tilknyttet profilen.
+Deltager på adgangsprofil En på forhånd registreret person eller it-system, der kan få tildelt
+muligheden for at agere på vegne af adgangsprofilens ejer, fx en
+advokatsekretær, en fuldmægtig eller et it-system. Også omtalt
+som profildeltager.
+7
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+API-deltager En registrering af et it-system, der er tilknyttet en adgangsprofil på
+lignende måde som en deltager. Tilknytningen identificeres igen-
+nem serienummeret på certifikatet, der således skal registreres på
+adgangsprofilen ved hjælp af en funktion på minskiftesag.dk.
+Tabel 1: Begrebsoversigt
+Forkortelse Beskrivelse
+JSON JavaScript Object Notation - dataformat der benyttes som overord-
+net dataformat i domstolenes Skifteportal og Straffesagsportals
+API’er.
+API Application Programming Interface - (overordnet) en mekanisme,
+der tillader et stykke software at interagere med andet software.
+Specifikt er API’erne til domstolenes Skifteportal og Straffesagspor-
+tal en samling webtjenester udstillet via HTTP.
+OCES Offentlige Certifikater til Elektronisk Service - certifikatpolitikker, der
+fastsætter udformningen af digitale certifikater til meddelsesservi-
+ces. OCES certifikater er alle X.509 certifikater.
+DAR Danmarks Adresseregister - autoritativt register over alle adresser
+på landstykker i Danmark.
+TLS Transport Layer Security - standard for krypteret client/server for-
+bindelser via Internettet, herunder med autenticitetssikring af ser-
+vere via X.509-certifikater.
+mTLS Mutual Transport Layer Security - anvendelse af TLS, hvor autenti-
+citetssikringen også omfatter klienten, der også anvender X.509
+certifikat.
+OAS eller OpenAPI speci-
+fikation
+Open Application Programming Interface - udbredt standard for be-
+skrivelse af HTTP API’er.
+CPR Det Centrale Personregister - centralt drevet register over alle per-
+soner, der bor i Danmark. De kommunale folkeregistre har ansvar
+for at opdatere informationerne.
+CVR Det Centrale Virksomhedsregister - register over alle virksomheder
+i Danmark, som drives af Erhvervsstyrelsen.
+8
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+UUID Universally unique identifier - 128-bit identifikator, der bruges til en-
+tydigt at identificere information på tværs af systemer uden overlap.
+SKS-nummer Skiftesag - Journalnummer-præfiks for skiftesager ved Danmarks
+Domstole.
+HTTP Hypertext Transfer Protocol - kommunikationsprotokol bag websi-
+der generelt og domstolenes Skifteportal og Straffesagsportal
+API’er specifikt.
+X.509 En standard under International Telecommunication Union (ITU) for
+digitale certifikater, der bruges til at verificere identiteter og etablere
+sikre forbindelser
+Tabel 2: Forkortelsesoversigt
+2. API-understøttede forretningsgange
+2.1 Forretningsmæssig kontekst
+Domstolenes Skifteportal og Straffesagsportal understøtter sagsbehandlingen for en række sagsty-
+per. Herunder beskrives kort konteksten for skiftesager ifm. behandling af dødsboer, insolvenssager,
+tvangsopløsningssager og andre sager efter selskabsloven samt ægtefælleskifte.
+Dødsboskiftesager: I dødsboskiftesager understøttes processen for registrering af krav, tilgodeha-
+vender, aktiver, effektfortegnelser og proformaopgørelser og for indsendelse af forespørgsler. Lige-
+ledes videregives nødvendige oplysninger om boets skifteform og/eller boets kontaktperson/bobe-
+styrer. Ydermere understøttes det at:
+1.
+2.
+3. I
+4.
+5.
+6.
+ndsende opgørelser
+Skrive til retten
+Anmode om udlevering
+Give arveafkald
+Anmode om tinglysning
+Se sagens historik
+9
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Tvangsopløsningssager: I tvangsopløsningssager understøttes processen for registrering af krav
+og tilgodehavender samt oprettelse af henvendelser og modtagelse af svar fra skifteretten. I tilfælde,
+hvor skifteretten har udnævnt en likvidator, understøttes visse af likvidatorers opgaver. Desuden
+understøttes kæreprocessen således, at der er mulighed for på Skifteportalen at kære skifterettens
+afgørelser.
+Fælles: Når krav, tilgodehavender, aktiver, effektfortegnelser, proformaopgørelser og forespørgsler
+registreres, kan dokumentation/bilag samtidig registreres. Krav og tilgodehavender kan ændres eller
+slettes efter registrering, fx kan et foreløbigt krav ændres til et endeligt krav.
+Øvrige aktører i en sag kan få indsigt i registreringerne. For dødsboer får kontaktperson eller bobe-
+styrer adgang til at se registreringerne, når skifteretten har taget stilling til dødsboets behandlings-
+måde. For tvangsopløsningssager gør det samme sig gældende, når der udnævnes en likvidator.
+De understøttede processer, herunder bl.a. registreringer, likvidators opgaver og kæreprocessen,
+kan ske igennem domstolenes brugergrænseflade til Skifteportalen (minskiftesag.dk), men kan også
+ske igennem API-adgang i henhold til denne vejledning. Der er ingen datamæssig forskel på, om
+aktionen er sket via webgrænsefladen eller via API.
+Der er dog forskel på, hvordan API-tokens nøjagtigt anvendes på Skifteportalen:
+1. Alle registreringer af krav, tilgodehavender, aktiver, effektfortegnelser og forespørgsler foregår
+via direkte anvendelse af certifikater og tokens. Det vil være organisationen bag det anvendte
+certifikat, der står som anmelder på registreringen.
+2. For tvangsopløsninger: Handlinger, der varetages på vegne af udnævnte likvidatorer i en tvangs-
+opløsningssag, foretages derimod som delegerede anvendelser (hvor certifikatet skal være ek-
+splicit registreret til at agere på vegne af likvidator og skal være vekslet til et delegeringstoken).
+Denne skelnen gennemgås nærmere i afsnit 2.3 nedenfor.
+2.2 Vilkår for API-adgang til domstolenes Skifteportal og Straffesagsportal
+Denne vejledning beskriver vilkårene samt krav for adgang til domstolenes Skifteportal og Straffe-
+sagsportal via en række HTTP-baserede API. API-kaldene er rettet mod juridiske personer, der på
+egne eller andres vegne skal interagere elektronisk med domstolene. For skifteområdet kan API-
+brugere registrere krav, tilgodehavender, redegørelser m.m. eller hente data registreret i dødsbo-
+skiftesager eller tvangsopløsningssager, så de kan behandles af bobestyrere, kontaktpersoner, li-
+kvidatorer m.fl. Yderligere kan man kommunikere med retten og og anmode om udlevering m.m. Se
+10
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+API-spec for fuld liste af funktionalitet. For straffesagsområdet kan alene hentes sagsdata og akter
+for beskikkede partsrepræsentanter.
+En juridisk person dækker over en retlig enhed, fx et selskab, en forening, en institution eller offentlig
+myndighed, der i visse henseender kan påtage sig rettigheder samt forpligtelser på samme måde
+som fysiske personer.
+Ved API-tilslutning til domstolenes Skifteportal og Straffesagsportal giver Domstolsstyrelsen adgang
+til produktionsmiljøet. Ansøgeren skal opfylde de til enhver tid af Domstolsstyrelsen fastsatte krav.
+Adgang til domstolenes Skifteportal og Straffesagsportal API’er kan tildeles, såfremt den juridiske
+person opfylder følgende:
+1. Den juridiske person skal have testet integrationen i testmiljøet, før ansøgeren kan få
+adgang til produktionsmiljøet.
+2. Den juridiske person er indforstået med, at API-adgang til domstolenes Skifteportal og
+Straffesagsportal kun må bruges til de funktioner, der er beskrevet i nærværende guide
+(se særligt afsnit 4. Forretningsunderstøttelse igennem API-kald) og til de API’er, der er
+beskrevet på Danmarks Domstoles hjemmeside, og kun i relation til sager, der behandles
+ved Danmarks Domstole.
+3. Den juridiske persons adgang til API må ikke være unødigt belastende for Domstolenes
+systemer i forhold til frekvens og API-kaldemønstre. API-adgangen er derfor omfattet af
+”rate-limiting”, hvor der per API-bruger sættes et maksimum for antallet af individuelle
+kald af en operation over en given tidsenhed. Denne rate-limit er bundet op på det Client
+ID, som I modtager fra os.
+4. Den juridiske person er indforstået med, at Domstolsstyrelsen kan tilbagekalde API-ad-
+gangen, såfremt ansøgeren ikke længere opfylder førnævnte vilkår.
+2.3 API-adgangsmæssig kontekst
+API-adgangen er typisk relevant for organisationer, der skal registrere krav, tilgodehavender, rede-
+gørelser m.m. eller for organisationer, der skal arbejde med dødsboskiftesager eller tvangsopløs-
+ningssager samt straffesager, så de kan behandles af bobestyrere, beskikkede advokater, kontakt-
+personer eller likvidatorer. Herudover understøtter følgende sagstyper API-adgang: insolvenssager,
+tvangsopløsningssager og andre sager efter selskabsloven samt ægtefælleskifte.
+Organisationer, der har behov for API-adgang, vil typisk være advokathuse, kreditorer, fx forsynings-
+virksomheder, eller andre, der naturligt har stor volumen af krav eller tilgodehavender, der skal
+11
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+anmeldes efter et dødsfald. Det vil også være en fordel for organisationer, der er tilknyttet et større
+antal sager, som med fordel kan indarbejde API-adgang i eksisterende automatiserede rutiner i egne
+it-systemer, eller for virksomheder, der anmelder krav for andre, fx inkassobureauer.
+Til søgning efter sager samt anmeldelse af krav m.v. anvendes “direkte” API-tokens, hvor det an-
+vendte MitID Erhverv Organisationscertifikat anvendes til direkte at identificere den juridiske person,
+der ageres på vegne af.
+Organisationer, der har behov for at kunne hente data om sager, de er udpeget i, vil typisk være
+advokatvirksomheder eller tilsvarende. Mange advokatvirksomheder anvender brancheløsninger,
+der kan opnå API-tilslutning til domstolenes Skifteportal og Straffesagsportal og derigennem tilbyde
+automatisering af denne datahentning for deres kunder. Nedenfor beskrives de sagstyper, der kan
+hentes data om via API-tilslutning.
+Dødsboskiftesager: Fremsøgning, registrering, redigering og hentning er alle dokumenteret i den
+fremlagte OpenAPI spec for Dødsbojournalen beskrevet (doedsbojournal-oas.yaml), som er den
+service, der håndterer registreringer vedrørende dødsboer.
+Dødsbosager, Insolvenssager, tvangsopløsningssager og andre sager efter selskabsloven
+samt ægtefælleskifte: Fremsøgning af eksisterende sager sker igennem sagshylde-servicen
+(sagshylde-oas.yaml), hvor sager kan fremsøges eller hentes under 'mine sager' med bl.a. skifteret-
+tens sagsnummer og sagens id (UUID). Ud fra dette sags-id kan man hente sagsoplysninger, doku-
+menter, retsbøger, sagsdeltagere, frister og meddelelser, skrive til retten samt (for tvangsopløs-
+ningssager) anmelde og læse krav og tilgodehavender via det samlede eksterne API, beskrevet i
+insolvens-dirigent-ekstern-oas.yaml (se afsnit 4.5). Via samme API kan nye sager desuden oprettes.
+Straffesager: Straffesager kan kun tilgås af advokater, der er beskikket på sagen, og først når det
+relevante embede har publiceret information til dem. Herefter vil sagerne fremgå af sagshylde-API’et,
+og de konkrete sagsoplysninger kan hentes fra straffesystemets API, som dokumenteret i straffe-
+ekstern-api-oas.yaml. En sag vil indeholde bilag, der hentes ved id, igennem dokumentlageret (se
+nedenfor).
+12
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Fælles tjenester: Der findes en række services, som bruges på tværs af sagsområder:
+ Personopslag, beskrevet i person-oas.yaml
+ Virksomhedsopslag, beskrevet i virksomhed-oas.yaml
+ Information om retskredse og embeder, beskrevet i retskreds-oas.yaml
+ Dokumentlager hvortil bilag til indberetninger uploades. Beskrevet i dokument-lager-ekstern-
+oas.yaml
+ Adresseopslag, beskrevet i adresse-oas.yaml
+ Sagshylde, som muliggør hentning af tilknyttede sager og fremsøgning af sagsinfomation ud
+fra CVR-nummer og navn. Beskrevet i sagslager-oas.yaml
+3. Henvendelsesservice, som muliggør at oprette henvendelser til retten (dog ikke i dødsboskifte-
+sager) og hentning af svar på disse, beskrevet i henvendelse-oas.yaml og henvendelse-dirigent-
+oas.yaml.
+2.4 Anvendelse af Postman med OpenAPI Specification (OAS)
+For at gøre det nemmere at arbejde med vores API’er kan de enkelte OpenAPI Specification
+(OAS)-filer konverteres til Postman Collections. Dette giver et mere overskueligt format og gør det
+muligt at teste endpoints direkte i Postman.
+Følg denne vejledning for at konvertere OAS til en Postman Collection:
+https://blog.postman.com/converting-openapi-specs-to-postman-collections/
+2.5 Roller i API-tilslutninger (direkte anvendelse)
+Der skelnes i API-tilslutningen imellem det it-system, der opnår API-tilslutning til domstolenes Skif-
+teportal og Straffesagsportal (API-anvender), og den juridiske eller fysiske person, der skal benytte
+tilslutningen til registrering eller hentning. Endelig kan der for krav og tilgodehavender også skelnes
+imellem hvem, der anmelder, og hvem, der er debitor/kreditor. Anmelderen autentificeres via et
+OCES3 organisationscertifikat.
+Ved tilslutningen udsteder Domstolsstyrelsen en API-nøgle (bestående af et ”Client ID” og en ”Client
+Secret”) til API-anvenderen. Denne API-nøgle benyttes sammen med nævnte organisationscertifikat
+for at identificere en konkret anmelder (juridisk person eller myndighed), der er tilsluttet igennem en
+godkendt API-anvender.
+Følgende eksempel dækker de forskellige roller: Advokatvirksomheden A benytter advokatsystemet
+S til at anmelde kravet R på vegne af en kreditor K imod dødsboet D, hvorefter skifteretten udpeger
+advokatfirmaet B til at behandle boet.
+13
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+1. Advokatvirksomheden A anmelder kravet K og aktiverer anmeldelsen i advokatsystemet S. A
+skal have stillet et OCES3 organisationscertifikat for eget CVR-nummer til rådighed for S.
+2. Advokatsystemet S er tilmeldt som API-anvender til API-løsningen på Skifteportalen og har fået
+udstedt et Client ID og en Client Secret, som benyttes til at tilgå Skifteportalen, sammen med
+organisationscertifikatet for deres kunde A.
+3. Kreditor K vil blive registreret som kreditor på kravet R.
+4. Dødsboet D vil herefter afspejle kravet, som kan ses af anmelderen, af kreditor, af skifteretten i
+den relevante retskreds og endelig af bobestyrer/kontaktperson, såfremt boet er udleveret.
+5. Advokatfirma B udpeges til at behandle boet og kan derfor se det anmeldte. Måske benytter
+advokatfirmaet B også advokatsystemet S, og hvis dette er tilfældet, skal B ligeledes stille et
+OCES3 organisationscertifikat for eget CVR-nummer til rådighed for S.
+I det ovenstående eksempel bruger begge advokatvirksomheder således deres egne certifikater i
+direkte token-anvendelse.
+2.6 API-adgang for delegeret anvendelse
+Fra Skifteportalens release 3 vil skifteretten udnævne likvidatorer. Den udnævnte likvidator har mu-
+lighed for at delegere sin adgang til andre MitID Erhverv-brugere fra samme virksomhed. Dette gø-
+res ved registrering af en profil.
+Følgende eksempel dækker de forskellige roller: Advokatvirksomheden A benytter advokatsystemet
+S til at anmelde kravet på vegne af kreditor K i tvangsopløsningssagen T, hvorefter skifteretten ud-
+nævner advokat L i advokatfirmaet B til at behandle boet. Advokatfirmaet B benytter ligeledes advo-
+katsystemet S.
+1. Advokatvirksomheden A anmelder kravet K i tvangsopløsningssagen T og gør dette igennem
+advokatsystemet S. A skal have stillet et OCES3 organisationscertifikat for eget CVR-nummer til
+rådighed. Her benyttes der således den direkte token-anvendelse.
+2. Advokatsystemet S er tilmeldt som API-anvender til API-løsningen på Skifteportalen og har fået
+udstedt en API-nøgle (i form af Client ID og en Client Secret), som benyttes til at tilgå Skiftepor-
+talen. Sammen med organisationscertifikatet for deres kunde A kan systemet således agere som
+virksomhed A.
+ Organisationscertifikatet C som er udstedt af leverandøren bag S.
+3. Kreditor K vil blive registreret som kreditor på kravet K.
+4. Tvangsopløsningssagen T vil herefter afspejle kravet, som kan ses af anmelderen og af skif-
+teretten i den relevante retskreds og endelig af likvidator, såfremt der er udnævnt en sådan.
+5. Advokat L er udnævnt af skifteretten til at behandle boet. Det er et personligt hverv for likvidator,
+og der er derfor oprettet en adgangsprofil for advokat L. Advokat L kan derfor se krav registreret
+14
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+af advokat A på Tvangsopløsningssagen T. Advokat L har ligeledes oprettet en API-deltager for
+certifikatet C under sin adgangsprofil og tilknyttet denne på sagen T.
+For at sikre at API-adgang ligeledes sker på vegne af den udnævnte advokat L, skal profilens ejer
+(typisk en advokat) eller administrator (fx en it-medarbejder eller sekretær) have angivet det certifi-
+kat, der må agere på likvidatorens vegne.
+Samme mekanisme benyttes for at få adgang til straffesager. For at få adgang til straffesager, skal
+det udstedte direkte token endvidere efterspørge ”strafferet”-scope – dette vil følge med til det indi-
+rekte token.
+2.7 Sikker anvendelse af sagsdata i egne systemer
+Det er op til API-anvenderen at behandle data hentet fra domstolenes Skifteportal og Straffesags-
+portal forsvarligt. Portalerne og deres API behandler data både direkte fra sagsparter og partsre-
+præsentanter, fra ansatte i Danmarks Domstole, og fra andre offentlige myndigheder. Sagsdata
+gør udstrakt brug af generelle tekstfelter, der som udgangspunkt accepterer generelle tekst-
+strenge, som brugere måtte indberette eller registrere.
+Dette udgør ikke i sig selv en sårbarhed, men når data anvendes i egne løsninger, skal I være op-
+mærksomme på selv at håndtere de relevante datatyper korrekt.
+Eksempelvis:
+ Videreformidles indholdet fra fritekstfelter (fx titel eller beskrivelse af et krav) i et bruger-
+vendt system, hvor det behandles i en tekstbaseret sammenhæng (fx HTML, JavaScript
+eller lignende), skal dette output transformeres korrekt (eng. escapes), så tekstfelter ikke
+fremstår som jeres løsnings egen kode eller websidestruktur. Fx. kan virksomhedsnavne
+indehold ’&’-tegn, som i fx HTML-sider eller URL’er betyder noget særligt.
+ Skal sagsdata opbevares eller indsættes i en database, skal det tilsvarende indpakkes, va-
+lideres eller transformeres, så det fungerer korrekt i den kontekst, det bruges. Person-
+navne kan fx. indeholde apostroffer, hvilket har en særlig betydning, hvis det bruges di-
+rekte i SQL udtryk.
+ Linjeskift og andre kontroltegn kan ligeledes overraske, hvis de indsættes i tekstformater
+uden relevant transformation.
+Disse hensyn er ikke specifikke for domstolenes udstillede API’er. Læs evt. mere hos OWASP, på
+<https://top10proactive.owasp.org/archive/2024/the-top-10/c3-validate-input-and-handle-excepti-
+ons/>.
+15
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+3. API-loginprocesser
+Når en API-anvender skal registrere eller hente data, skal der først logges ind (”token”-kaldet) for
+at opnå et access-token, som skal bruges i de efterfølgende API-kald. Login-interaktionen beskri-
+ves nedenfor, og i den efterfølgende sektion beskrives det, hvordan de egentlige forretningspro-
+cesser er understøttet.
+3.1 Login og kald med direkte token-anvendelse
+I dette afsnit vil en beskrivelse af loginforløbet igennem integrationen blive uddybet. Som illustreret
+i nedenstående figur tages der udgangspunkt i adgang til API vedrørende dødsboer.
+Figur 1: Forløb for login og kald
+Forløbet for de første to trin beskrives nedenfor:
+Trin 1: Token request (variant A)
+API-anvenderen (og deres eksterne systemer) skal have et bearer-token (”access-typen”), som
+skal hentes via et authentication-endpoint. Authentication-endpoint skal kaldes med klientcertifikat
+(mutual TLS) med et organisationscertifikat (OCES3) samt den API-nøgle, der er registreret og ak-
+tiveret på forhånd i API-udviklerportalen. Konkret sker dette med en POST til den ønskede URL,
+afhængig af miljø. Fremgangsmåden for at opnå en access-token er ens i både test- og produkti-
+onsmiljøet. Den eneste forskel består i den URL, der anvendes ved forespørgslen.
+Ved indførelsen af API-adgang til hentning af straffesager, er der indført en separat godkendelse af
+tilslutninger, og med den et separat scope ”strafferet”, der skal efterspørges i token-kaldet.
+16
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Til testmiljøet:
+De vedlagte Postman-screenshots illustrerer, hvordan en korrekt HTTP-anmodning skal konstrueres
+for at opnå et gyldigt token fra autentificerings-servicen.
+Url
+https://sysauth.test-minskiftesag.net/realms/sts/protocol/openid-connect/to-
+ken
+Body
+Auth
+Access-token skal medsendes som en Bearer-token i Authorization-headeren ved alle HTTP-an-
+modninger til vores tjenester.
+17
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Til produktionsmiljøet:
+https://sysauth.domstol.dk/realms/sts/protocol/openid-connect/token
+POST’ens request body skal være FORM/URL-encoded, og indeholde følgende felter:
+Værdi
+client_id <det udleverede client id>
+client_secret <den udleverede client secret>
+grant_type ”client_credentials”
+scope ”openid” eller ”openid strafferet”
+Et eksempel på token-kaldet (med bash, jq og curl):
+AUTH_URL= <URL til det ønskede miljø>
+AUTH_CLIENT_ID=<udleveret client id>
+AUTH_CLIENT_SECRET=<udleveret client secret>
+AUTH_CERT=<sti-til-OCES3-certifikat-for-indberetter.p12>
+AUTH_CERT_PASSWORD=<p12-password>
+export AUTH_TOKEN=$(curl -s -X POST \
+"$AUTH_URL/realms/sts/protocol/openid-connect/token" \
+--cert-type p12 \
+--cert "$AUTH_CERT:$AUTH_CERT_PASSWORD" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "client_id=$AUTH_CLIENT_ID" \
+-d "client_secret=$AUTH_CLIENT_SECRET" \
+-d "grant_type=client_credentials" \
+-d "scope=openid" | jq -r '.access_token')
+echo "token:"
+echo $AUTH_TOKEN
+Eksempel 1: Token-kald med TLS-baseret identitet (variant A)
+Ovenstående vil hente access-token ned i variablen AUTH_TOKEN. Det returnerede token repræ-
+senterer den virksomhed, hvis certifikat blev præsenteret som klientcertifikat.
+18
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Trin 1.1: Alternativ autentificeringsmekanisme (variant B)
+Bemærk: Denne variant er mere teknisk kompliceret at implementere for API-anvenderen og an-
+melderen, der skal kunne levere en signeret JWT. De fleste API-anvendere benytter derfor variant
+A.
+API-anvenderes indledende token-request kan forsynes med en JWT, signeret med anmelderens
+OCES3 certifikat. Dette kald returnerer et access-token, som er ens med den eksisterende løsning.
+I stedet for at benytte API-anvenderens Client ID og Client Secret, skal token-requestet sikres med
+at bruge klientcertifikat (mutual TLS) i form af et OCES3 certifikat tilhørende API-anvenderens.
+Et eksempel på token-request’et:
+#!/bin/bash
+KEYCLOAK_URL='http://localhost:8083'
+KEYCLOAK_REALM='sts'
+KEYCLOAK_SCOPES='openid'
+AUTH_CERT=<sti-til-API-anvenderens-OCES3-cert>
+AUTH_CERT_PASSWORD=<password-til-P12>
+TEST_ASSERTION='eyJ4NXQjUzI1NiI6IlEtLU…wk67nXjXg'
+export AUTH_TOKEN=$(curl -v -s -X POST "$KEYCLOAK_URL/realms/$KEY-
+CLOAK_REALM/protocol/openid-connect/token" \
+--cert-type p12 \
+--cert "$AUTH_CERT:$AUTH_CERT_PASSWORD" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "client_assertion_type=urn:ietf:params:oauth:client-assertion-
+type:jwt-bearer" \
+-d "client_assertion=$TEST_ASSERTION" \
+-d "grant_type=client_credentials" \
+-d "scope=$KEYCLOAK_SCOPES")
+echo $AUTH_TOKEN
+Eksempel 2: Token-kald på baggrund af x5c-token (variant B)
+Bemærk: at Client Secret for API-anvenderen bortfalder samt, at Client ID går fra at være en selv-
+valgt streng til at være API-anvenderens CVR-nummer, så den kan holdes op imod OCES3 certifi-
+katet.
+Det medsendte JWT-token (x5c client assertion)
+”TEST_ASSERTION” består af tre dele, som vil blive gennemgået i nedenstående tekst:
+1. Certifikatkæden indeholdende anmelderens OCES3 certifikat og intermediate certifikater op til
+rodcertifikatet.
+19
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+2. En assertion om at det er den udstedende anmelder.
+1. Signaturen.
+Et eksempel på certifikatkæden, som ser således ud:
+{
+"x5c": [
+"MIIGO...UjL1k9nBZSJtyfw==",
+"MIIFQ...6ukkOeqTqnVYCW68=",
+"MIIGS...Faia3U7o2+HYdHw=="
+],
+"alg": "RS256"
+}
+Et eksempel på assertion, som ser således ud:
+{
+"iss": "https://test.local",(Anmelderens backend, der har udstedt assertion.
+Valideres ikke.)
+"sub": "30808460",(Dette er API-anvenderens CVR-nummer – valideres imod
+OCES3 certifikatet anvendt i mTLS token-kaldet)
+"aud": "https://sysauth.domstol.dk", (eller tilsvarende for API-testmiljøet).
+"exp": 61697372400, (udløbstidspunkt)
+"jti": "0b60c02a-46c3-4cc9-b0fc-dd87f81ff0b7" (id)
+}
+Endeligt er signaturdelen den rent binære signatur af den valgte signaturtype, S256.
+Det udstedte access-token
+Der udstedes et access-token til domstolenes Skifteportal og Straffesagsportal API, såfremt føl-
+gende krav opfyldes:
+1. API-anvenderens OCES3 certifikat (virksomheds- eller organisationscertifikat), der benyttes i
+mTLS til sysauth.domstol.dk, skal have et CVR-nummer, der registeres som client i Domstole-
+nes it-system.
+o OCES3 certifikatet til mTLS skal være udstedt til API-anvenderen, og CVR-numme-
+ret skal fremgå i “sub” feltet i det indsendte token.
+o Certifikatet skal desuden være gyldigt og ikke tilbagekaldt, ellers vil det blive afvist
+ved handshake.
+20
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+2. Anmelderens OCES3 certifikat (eller organisationscertifikat). Certifikatet skal være gyldigt og
+ikke tilbagekaldt, ellers vil det blive afvist ved handshake.
+1. Client_assertion må ikke være udløbet (som angivet i ”exp”-feltet).
+2. Det udstedte token anvendes helt som de øvrige direkte tokentyper.
+Trin 2: Token response
+Uanset om der benyttes variant A eller variant B til at opnå et token, vil de relevante login POST-
+kald give et JSON-svar, der kunne se ud som følger:
+{
+"access_token": "eyJhbGciOiJSUzI1sInR5c...Z0qmVKMw",
+"expires_in": 300,
+"refresh_expires_in": 0,
+"token_type": "Bearer",
+"id_token":"eyJhbGciOiJSUzI1NiIsInR5...F96X_s1cjxNw",
+"not-before-policy": 0,
+"scope": "openid"
+}
+Eksempel 3: Det udstedte JWT-token til direkte anvendelse
+Her er det property'en "access_token", der skal udvælges og benyttes til de efterfølgende API-
+kald. Access-token vil være gyldigt i ”expires_in” sekunder, hvorefter et nyt token skal hentes
+(som i trin 1), såfremt der fortsat skal kaldes.
+Trin 3/5 og frem beskrives nærmere i dette dokuments afsnit 4.
+3.2 Login og kald med indirekte tokenanvendelse
+I dette afsnit beskrives den indirekte tokenanvendelse nærmere, baseret på variationer af trinene
+beskrevet ovenfor. Når en profilejer giver en API-anvender, som anvender en virksomheds-token,
+adgang som deltager på en profil (profildeltager), oprettes der automatisk en indirekte person-token.
+Denne person-token tildeles et autorisationsniveau, der svarer til likvidatorens egne rettigheder. To-
+kenen bruges til autentificering og autorisation i systemet og muliggør handlinger på vegne af profil-
+ejeren i henhold til det tildelte adgangsniveau. Med andre ord sker der en overgang fra virksomheds-
+token til person-token. Indirekte tokenanvendelse forudsætter forberedelse inden første anvendelse:
+3. Profilejeren (f.eks. likvidatoren eller den beskikkede advokat) skal tilføje API-brugeren som del-
+tager på sin adgangsprofil
+21
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+1. og API-anvenderen skal kende den professionelles adgangsprofil-id (vil også blive benævnt som
+likvidatorens id og likvidatorens profil-id nedenfor).
+De to forudsætninger gennemgås i det følgende.
+Forberedelse i Profiladministrationen
+For at gennemføre forberedelsen skal profilejeren (f.eks. Likvidatoren, bobestyreren eller den be-
+skikkede advokat) logge på minskiftesag.dk og gå ind på administrationssiderne for adgangsprofi-
+len. Bemærk: Dette kan først gøres efter, at en skifteret har udnævnt personen minimum én gang.
+Figur 2: Adgang til profil fra minskiftesag.dk
+Herfra vælges menupunktet ”Profil”, hvorefter de profiler, den pågældende bruger har adgang til,
+vises.
+Figur 3: Adgang til redigering af adgangsprofil som profilejer
+22
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+API-anvenderen skal kende likvidatorens ID for at kunne anvende den indirekte metode og hente
+informationer om sager, hvori likvidatoren er udnævnt.
+Dette giver adgang til en række muligheder på adgangsprofilen, herunder muligheden for at invitere
+en profildeltager via knappen ”Inviter deltager”.
+Figur 5:Tilføjelse af deltager
+Figur 4: Adgang til profiladministration
+23
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Dette medfører nedenstående dialog, hvor rollens ”API-bruger” vælges, og API-anvenderens serie-
+nummer indtastes.
+Figur 6: Indtastning af API-deltageroplysning
+Bemærk at der er tale om feltet SERIALNUMBER under certifikatets ”subject” (emne), som det er
+udstedt af OCES3-roden og MitID Erhverv, og ikke selve X509-feltet SerialNumber. Det relevante
+serienummer er vist nedenfor.
+24
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Figur 7: Placering af OCES3-certifikatets serienummer i Subject/emnefeltet
+Det er op til API-anvenderen at oplyse serienummeret til profilejeren (likvidatoren) og modtage ad-
+gangsprofil-id’et retur. Domstolene kan ikke bistå med denne proces.
+Processen skal kun gennemføres én gang per API-tilsluttet profilejer.
+Overblik over proces for tokenudveksling
+Det samlede forløb for tokenudstedelse, -udveksling og -anvendelse kan illustreres som følger:
+25
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Figur 8: Forløb for login, tokenveksling og kald
+Trin 1 og trin 2 foretages som beskrevet i afsnit 3.1 ovenfor. Bemærk at det er i trin 1 at ”scope”
+skal specificeres korrekt for de senere anvendelser, såfremt straffesager skal kunne hentes.
+Herefter gennemføres en tokenveksling, som følger:
+Trin 3: Token exchange
+Med det direkte access-token (der blev opnået i trin 2), kaldes tokenudvekslingsservicen nu, igen
+med HTTP-POST. Bemærk at dette gøres til et andet authentification endpoint end i trin 1, og at der
+til dette trin ikke anvendes klientcertifikat (mutual TLS).
+Til testmiljøet:
+https://auth.test-minskiftesag.net/token
+Til produktionsmiljøet:
+https://auth.domstol.dk/token
+POST’ens request body skal være FORM/URL-encoded, og indeholde følgende felter:
+26
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Værdi
+actor_token <det udleverede access-token fra trin 2>
+actor_token_type urn:ietf:params:oauth:token-type:access_token
+grant_type urn:ietf:params:oauth:grant-type:token-exchange
+requested_token_type urn:ietf:params:oauth:token-type:access_token
+subject_token <likvidatorens profil-id som fundet på Samarbejdsportalen>
+subject_token_type urn:dk:domstol:token-type:adgangsprofil-id
+Et eksempel på token-kaldet (med bash, jq og curl):
+AUTH_URL=<URL til det ønskede miljø>
+ACCESS_TOKEN=<modtaget access token>
+PROFIL_ID=<uuid for likvidators adgangsprofil>
+export AUTH_TOKEN=$(curl -s -X POST \
+"$AUTH_URL/token" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "actor_token=$ACCESS_TOKEN" \
+-d "actor_token_type=urn:ietf:params:oauth:token-type:access_token" \
+-d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+-d "subject_token=$PROFIL_ID" \
+-d "subject_token_type=urn:dk:domstol:token-type:adgangsprofil-id" \
+-d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange " | jq -r \
+'.access_token')
+echo "token:"
+echo $AUTH_TOKEN
+Eksempel 4: Token-kald med TLS-baseret identitet (variant A)
+Trin 4: Nyt access token returneres
+Resultatet af ovenstående kald svarer til tokenresultatet fra trin 2. Det er således en ”access”-to-
+ken, der skal benyttes ved efterfølgende API-kald, som ”Bearer”-token i ”Authorization”-headeren.
+Det nyudstedte token vil have samme ”scope” som token fra den første trin (actor_token).
+27
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+4. Forretningsunderstøttelse igennem API-kald
+4.1 Generelt om API servicekald
+De forskellige operationer, der kan udføres imod domstolenes Skifteportal og Straffesagsportal,
+følger det generelle HTTP-mønster, hvor POST opretter nye entiteter, GET henter entiteter, der
+allerede findes, PUT opdaterer en entitet, og DELETE sletter en entitet.
+Et eksempel på dette er OpenAPI-specifikationens operationer addKrav, getKrav, updateKrav,
+deleteKrav og getAllKrav. Bemærk at addKrav kaldes imod URL’en /doedsbojourna-
+ler/{doedsbojournalId}/krav, og returnerer hele den oprettede entitet (herunder kravets
+id). Dette id bruges i de resterende operationer, fx ved en DELETE af /doedsbojourna-
+ler/{doedsbojournalId}/krav/{kravId}. Endelig benyttes operationen getAllKrav til at
+hente en liste af kravene under dødsboet (samme URL som ved addKrav/POST-kaldet).
+Dette mønster går igen for de øvrige typer af registrerede data på dødsboer (tilgodehavender, ef-
+fektfortegnelser og forespørgsler). Ligeledes benyttes samme mønster og semantik for kald rettet
+mod tvangsopløsningssager og straffesager.
+4.2 Miljøer
+Når et accesstoken er opnået, kaldes alle efterfølgende kald på API-serveren. Alt efter hvilket miljø
+der arbejdes i, er der flg. URL’er, man kan kalde mod:
+Testmiljø API: https://api.test-minskiftesag.net
+Produktionsmiljø API: https://api.domstol.dk
+Testmiljø Frontend: https://minskiftesag.test-minskiftesag.net/
+Produktionsmiljø Frontend: https://minskiftesag.dk/
+Følgende API-kald-eksempler vil blive vist som pegende mod testmiljøet.
+Anskaffelsen af det rigtige OCES3 test certifikat
+Der skal anvendes et registreret test OCES3 certifikat med eget CVR-nummer, som angivet i an-
+søgning, for at komme på portalernes API testmiljø.
+Det er Digitaliseringsstyrelsen, som udsteder certifikater, og et testcertifikat på eget CVR-nummer
+kan oprettet via deres pre-prod. miljø. Se vejledning i Guide til oprettelse af testorganisationer i
+pre-produktionsmiljøet, slide 5: Del 2: Opret testorganisation med selvvalgt CVR-nummer via
+Swagger (avanceret).
+28
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+4.3 API-anvendelse på dødsboskiftesager
+Med et direkte access-token kan sagen fremsøges ud fra enten navn og adresse eller CPR-nummer.
+Se eksempel 5 nedenfor med reference til trinene i Figur 1 på side 15.
+Trin 3: Request til services
+Med et gyldigt access-token kan en sag nu fremsøges, og operationer kan udføres på sagen.
+Der kan eksempelvis fremsøges en sag med operationen searchBo, som per OpenAPI-specifikation
+er en POST indeholdende et JSON-objekt, hvori CPR-nummeret er angivet.
+Et eksempel på dette kald ses her:
+curl -H "Authorization: Bearer $AUTH_TOKEN" -X POST \
+-H "Content-Type:application/json" -d \
+'{"cprNummer":"4634875520"}' \
+https://api.test-minskiftesag.net/doedsbojournaler
+Eksempel 5: Kald af dødsbojournal-API med token
+(idet $AUTH_TOKEN er værdien af ”access_token”-feltet fra ovennævnte JSON-svar fra auth-kaldet
+i foregående eksempel).
+Trin 4: Response fra services
+Ovenstående kald vil så få et response fra det pågældende dødsbo, udfyldt efter OpenAPI-specifi-
+kationen regler. Et response kunne se ud som det følgende eksempel:
+[
+{
+"id": "e25d84d3-7aec-4361-84da-93125cb83f08",
+"oprettelsestidspunkt": "2022-06-15T07:14:50.6432001Z",
+"redigeringstidspunkt": "2022-06-15T07:14:50.7475822Z",
+"afdoede":{
+"personId":"6dc24b2e-0097-4ec4-b7f5-d75edb7547ea",
+"navn":"Erlinda Hills",
+"foedselsdato":"1923-06-10",
+"adresse":{
+"id":"5d7a5811-d837-4eeb-88f1-71d22bc11153",
+"adresselinje":"Ved Ringen 1",
+29
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+"postnummer":"4000",
+"by":"Roskilde"
+},
+"erNavnAdresseBeskyttet":false
+},
+"retskredsId": "1183",
+"skifteform": {
+"skifteform":
+"USKIFTET_BO",
+"udleveringsdato": "2022-06-15"
+},
+"kontaktperson": {
+"part": {
+"type": "PERSON",
+"person": {
+"personId": "e37eef41-5493-4ccf-b16d-33f7a80a78e2"
+}
+}
+},
+"vigtigeDatoer": {
+"doedsdato": "2014-12-11", "boUdleveret": "2022-06-15"
+}
+}
+]
+Eksempel 6: Resultat fra kald til dødsbojournal-API
+Den ovenfor viste fremsøgning af dødsboer giver et dødsbojournal-id, som er en UUID, der mod-
+svarer det enkelte dødsbo, og som bruges generelt i alle efterfølgende kald.
+Kvitteringer på anmeldelser til et dødsbo
+Når man opretter en anmeldelse (eksempelvis et krav) på Skifteportalen, vil man få en kvittering
+med i response. Nedenunder ses et eksempel på et response fra et API-kald ved anmeldelse af et
+krav (kvittering er markeret med fed):
+{
+"id":"4b97d591-1b88-4b70-81bc-7a4c4a227627",
+"oprettelsestidspunkt":"2022-09-09T13:08:25.98834636Z",
+"redigeringstidspunkt":"2022-09-09T13:08:25.988362763Z",
+"indberetter": {
+"type":"VIRKSOMHED",
+"virksomhed": {
+"cvrNummer":"11111111"
+}
+},
+"beloeb":123,
+"endeligt":false,
+30
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+"opgjortdato":"2022-04-29",
+"rettidigt":true,
+"harBilag":false,
+"kvittering": {
+"kode":"K1",
+"overskrift": "Dit krav er nu anmeldt ",
+"indhold": "Du har anmeldt et krav i boet efter Ione Koss.\nNår
+boet udleveres, vil boets kontaktperson få besked om dit krav.\nDu vil
+modtage en meddelelse via digital post, når boet udleveres."
+},
+"slettet":false
+}
+Upload og download af bilag i en dødsbojournal
+Skifteportalen tillader upload af bilag for hver type af anmeldelser.
+Bilag ses som entiteter, der kan tilknyttes på en anmeldelse. Bilag kan findes i form af deres me-
+tadata, som kan hentes i eksempelvis operationen getAllBilagForKrav, der ved et GET af /do-
+edsbojournaler/{doedsbojournalId}/krav/{kravId}/bilag returnerer en liste af me-
+tadata indeholdende bilagets id, filnavn og relativ URL.
+Med id eller relativ URL kan du efterfølgende hente bilagets binære indhold, eksempelvis ved GET
+af /doedsbojournaler/{doedsbojournalId}/krav/{kravId}/bilag/{bilagId}. Dette
+kald returnerer også bilagets indholdstype (MIME-type, i headeren Content-type) og filnavn (i hea-
+deren Content-Disposition).
+Tilsvarende uploades bilag til krav ved POST imod /doedsbojournaler/{doedsbojourna-
+lId}/krav/{kravId}/bilag. Bemærk, at der pr krav er et loft på 20 bilag og en grænse på
+størrelsen af det enkelte bilag. Bilagsindholdet skal være PDF format, og http-headeren Content-
+Disposition er krævet og skal indeholde et passende filnavn for bilaget. Endvidere skal Content-
+Type angives med ”application/pdf”.
+Håndteringen af bilag er identisk for de øvrige typer af registrerede data på dødsboer (tilgodeha-
+vender, aktiver, effektfortegnelser og forespørgsler).
+For at hente et bestemt bilag på et bestemt krav i testmiljøet, kunne kommandoen se ud således:
+curl –k -X -o test.pdf https://api.test-minskiftesag.net/doedsbojour-
+naler/{doedsbojournal-id}/krav/{krav-id}/bilag/{bilag-id}\
+-H "Authorization: Bearer $AUTH_TOKEN"
+cat test.pdf
+For at uploade et bilag på et bestemt krav i testmiljøet, kunne kommandoen se ud således:
+31
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+curl -k -X POST https://api.test-minskiftesag.net/doedsbojour-
+naler/{doedsbojournal-id}/krav/{krav-id}/bilag \
+-H "Authorization: Bearer $AUTH_TOKEN"
+-H "Content-Type: application/pdf"
+-H "Content-Disposition: filename=\"test.pdf\""
+-d @test.pdf
+Regler for uploadede PDF-dokumenter
+Bemærk: Under upload af bilag vil de blive scannet for skadeligt indhold og blive afvist ved føl-
+gende typer af indhold:
+- Filer, som reelt ikke er PDF
+- Javascript
+- Attachede filer i selve PDF’en
+- Automatiske links
+- Usynlige helsides links
+- ”Form apply”-handlinger
+API Fejlkoder
+API’en kan sende forskellige fejlkoder retur, alt efter hvilke input man giver. Her ses en liste over
+de forskellige koder, man kan få tilbage for dødsbo, samt en forklaring af fejlen:
+Fejlkode Beskrivelse
+doedsbo.f1 CPR-nr. må ikke kombineres med andre parametre
+doedsbo.f2 Angiv enten CPR-nr. eller navn og adresse
+doedsbo.f3 SKS-nummeret er allerede i brug
+doedsbo.f4 Den, som anmelder på vegne af en anden, må ikke være tom, når
+'ANDEN' part-type er sat
+doedsbo.f5 Retskreds med id '{0}' eksisterer ikke
+doedsbo.f6 Adresse med darId '{0}' eksisterer ikke
+doedsbo.f7 Udleveringsdato skal være dags dato eller tidligere
+doedsbo.f8 Dødsbojournal skal være udleveret, før bobehandling kan opdate-
+res
+doedsbo.f9 Bobeholdning må ikke sættes, når skifteform er '{0}'
+doedsbo.f10 Bundfradrag må ikke sættes, når skifteform er '{0}'
+doedsbo.f11 Skæringsdato må ikke sættes, når skifteform er '{0}'
+doedsbo.f12 Tillægsboafgift må ikke sættes, når skifteform er '{0}'
+doedsbo.f13 Kontaktperson skal sættes
+doedsbo.f14 Udbetaltdato skal sættes, når udbetalt er sat til 'true'
+doedsbo.f15 Udbetaltdato må ikke sættes, når udbetalt er sat til 'false'
+doedsbo.f16 Udbetaltdato skal være dags dato eller tidligere
+doedsbo.f17 Opgjortdato skal være dags dato eller tidligere
+32
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Fejlkode Beskrivelse
+doedsbo.f18 Bilaget overskrider den maksimalt tilladte størrelse ({0}/{1})
+doedsbo.f19 Maksimal grænse for antal bilag på registrering ({0}) er nået
+doedsbo.f20 Kategorier må kun angives en gang, De følgende er duplikater: {0}
+doedsbo.f21 Endeligt krav kan ikke redigeres efter proklamafristens udløb
+doedsbo.f22 Foreløbigt krav kan ikke redigeres efter frist for opdatering af fore-
+løbige krav
+doedsbo.f23 Tilgodehavende kan ikke redigeres efter proklamafristens udløb
+doedsbo.f24 Filen skal være en PDF-fil
+doedsbo.f25 PDF filen er usikker
+doedsbo.f26 ESagsskridt-data ikke tilstrækkelige til at oprette udenlandsk kon-
+taktperson
+doedsbo.f27 Enten kontaktperson eller bobestyrer skal være angivet af eSags-
+skridt
+doedsbo.f28 Følgende krævede værdier i udleveringens detaljer er ikke udfyldt:
+{0}
+doedsbo.f29 PDF-filen er låst med password
+doedsbo.f30 Oprettelsen af dødsboet mislykkedes, da rette værneting ikke
+kunne afgøres ud fra afdødes adresse
+doedsbo.f31 Oprettelsen af dødsboet mislykkedes, da {0} ikke er rette værneting
+doedsbo.f32 Udleveringen kan ikke gemmes, da der ikke er angivet et SKS-
+nummer på boet. Angiv SKS-nummeret på 'Boets oversigt' og for-
+søg derefter at registrere udleveringen igen
+doedsbo.f33 Bobeholdningen kan ikke være afgiftsfri, når skifteform er '{0}'
+doedsbo.f34 Det er ikke muligt at ændre godkendte forespørgslers status efter
+boets udlevering
+doedsbo.f35 Det er ikke muligt at oprette proformaopgørelsen, hvis 'bekræftet'
+ikke er 'true'
+doedsbo.f36 Kontaktperson skal være angivet på sagen ved udlevering
+doedsbo.f37 Det er ikke muligt at oprette forespørgslen, hvis 'bekræftet' ikke er
+'true'
+doedsbo.f38 Modtagelsesdatoen skal være tidligere end oprettelsesdatoen
+doedsbo.f39 Angiv venligst 1 effekt eller skriv bemærkning
+doedsbo.f41 Der er fejl i de indtastede oplysninger. Kontroller venligst at oplys-
+ningerne er korrekte og prøv igen
+doedsbo.f42 Det indtastede CPR-nummer findes ikke
+Tabel 3: Forretningsfejlkoder for dødsbojournal-API'et
+33
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+4.4 Integrationsguide for betaling af boafgift
+Denne guide er et oplæg til hvordan Forsikring & Pension skal integrere til Skifteportalen ifm. udbe-
+taling af boafgift.
+Proces for integration og Open-Api-Specifikationer
+Når der skal betales boafgift er der overordnet følgende handlinger:
+2. 1. Find den relevant dødsbosag
+3. 2. Oplys om de begunstigede (frivilligt trin)
+4. 3. Oplys om boafgiftsberegning
+5. 4. Selve boafgiftsbetalingen
+34
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Find dødsbo
+Man bruger handlingen searchBo fra doedsbojournal-oas.yaml. Via dette kan man hente en døds-
+bojournal, som har et sagId. Dette er referencen til sagen.
+Oplys om de begunstigede
+Dette trin er ikke påkrævet
+1. Der uploades en PDF til dokumentlageret med handlingen add i dokument-lager-ekster-
+noas.yaml. Dette returnerer en reference til dokumentet.
+2. Herefter knyttes dokumentet til sagen via opretOversigtOverBegunstigede fra boafgiftoas.yaml.
+Oplys om boafgiftsberegning
+1. Der uploades en PDF til Dokumentlageret med handlingen add i dokument-lager-ekster-
+noas.yaml. Dette returnerer en reference til dokumentet.
+2. Der oprettes en resurse af typen boafgiftsberegning via handlingen opretBoafgiftsberegning. Her
+angives beløbet, betalingId og dokumentId og evt. id på oversigt over begunstigede. Beløbet er det
+beløb som overføres til skifteretten, ikke til arvingerne.
+Korriger boafgiftsberegning
+Når en boafgiftsberegning skal korrigeres gøres det ved at slette den gamle og efterfølgende op-
+rette en ny. Sletningen sker via handlingen sletBoafgiftsberegning.
+Selve boafgiftsbetalingen
+Selve betalingen sker via bankoverførsel uden for selve Skifteportalen. Bemærk dog formatkra-
+vene til betalingsId.
+BetalingId: Det skal sikres at betalingId’er er unikke. Ydermere må betalingsId’er være højest 20
+tegn pga. begrænsning af tekst ved bankoverførsler. Derfor bruges følgende format:
+1 <CVR på selvskab> <Unik alphanumerisk streng mellem 1 og 12 tegn>
+Fx for et firma som har CVR 22334455:
+1 22334455a123435667
+35
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Format af PDF’er
+Format af “Oplysninger om de begunstigede”
+Der er ikke nogen formkrav til PDF’en. Den læses af en sagsbehandler i skifteretten.
+Format af “Boafgiftsberegning”
+Der er ikke nogen formkrav til PDF’en. Den læses af en sagsbehandler i skifteretten.
+Selve betalingen
+Betalingen sker som bankoverførsel. Ved sletning af boafgift betales evt. indbetalt beløb tilbage.
+Testdata
+Pt. kan CPR-nummeret 4134083100 bruges til at finde et dødsbo, hvor man kan teste imod.
+4.5 API-adgang til sager om insolvens, tvangsopløsning og ægte-
+fælleskifte
+Det eksterne API (V2) – beskrevet i insolvens-dirigent-ekstern-oas.yaml – giver én samlet indgang
+til at indsende begæring/anmodning/ansøgning, hente oplysninger, håndtere frister og skrive til
+skifteretten vedrørende insolvenssager, tvangsopløsningssager og andre sager efter selskabslo-
+ven samt ægtefælleskiftesager på Skifteportalen.
+API'et dækker i alt syv sagstyper:
+ Forebyggende rekonstruktion
+ Rekonstruktion
+ Konkurs
+ Gældssanering
+ Tvangsopløsning
+ Andre sager efter selskabsloven
+ Ægtefælleskifte
+Al funktionalitet er samlet i samme API-specifikation og opdelt i to grupper af endpoints:
+Tværgående funktionalitet for alle syv sagstyper (indsend begæring/anmodning/ansøgning og
+hent sag, sagens gang, retsbøger, dokumenter, sagsdeltagere, meddelelser, frister og skriv til ret-
+ten) ligger under /v2/insolvenssagerEkstern og beskrives i afsnit 4.5.1.
+Funktionalitet, der er specifik for tvangsopløsningssager (anmeldelse og administration af
+krav og tilgodehavender), ligger under /v2/tvangsoploesningssagerEkstern og beskrives i afsnit
+4.5.2.
+Alle brugere – uanset rolle (fx indsender, rekvirent, kurator, likvidator eller rekonstruktør m.fl.) – kal-
+der de samme V2-endpoints. Det er brugerens rolle i sagen (via det anvendte token), der afgør,
+hvilke oplysninger rollen kan se, og hvilke handlinger der kan udføres. Reglerne for brug af direkte
+og indirekte token beskrives i afsnit 4.5.3.
+36
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Tværgående funktioner for alle syv sagstyper (/v2/insolvenssagerEkstern)
+Endpoints under /v2/insolvenssagerEkstern fungerer ens på tværs af alle syv sagstyper og dækker
+følgende områder:
+1. Indsend sag (POST /v2/insolvenssagerEkstern): Indsendelse af begæringer/anmodnin-
+ger/ansøgninger i følgende sagstyper via API'et: Forebyggende rekonstruktion, rekonstruktion,
+konkursbegæring, gældssanering, andre sager efter selskabsloven og ægtefælleskifte.
+Tvangsopløsningssager oversendes fra Erhvervsstyrelsen og kan derfor ikke oprettes via
+API'et.
+2. Hent sag (GET /v2/insolvenssagerEkstern/{sagId}): Returnerer et samlet overblik over sa-
+gen, herunder sagsnummer, retskreds, sagstype, sagstypespecifikke datoer, brugerens egen
+rolle på sagen samt sagens aktuelle status og eventuelle afslutningsform.
+3. Sagens gang, retsbøger og dokumenter: Hentning af sagens hændelseshistorik (.../sagens-
+gang), retsbøger (.../retsboeger) og dokumentsamlinger med tilhørende dokumenter (.../doku-
+menter). Selve dokumentfilerne uploades og hentes via Dokumentlager-API'et (se afsnit 4.7.7).
+4. Sagsdeltagere (.../sagsdeltagere): Hentning af sagsdeltagere baseret på rollens rettigheder –
+fx kurator, likvidator m.fl. samt øvrige sagsdeltagere. API-brugere under en profil kan opdatere
+profilens kontaktoplysninger på sagen.
+5. Meddelelser og frister (.../meddelelser og .../frister): Hentning af meddelelser og frister
+Håndtering af frister (fx erklæring eller redegørelse) med fritekst og/eller uploadede dokumen-
+ter.
+6. Skriv til retten (GET .../meddelelser/emner og POST .../meddelelser): Al skriftlig kommuni-
+kation med skifteretten på sager sker via Skriv til retten.
+API-brugeren henter først listen over gyldige emner for den pågældende sagstype (GET
+.../meddelelser/emner) og indsender derefter meddelelsen med det valgte emne, fritekst og
+eventuelle dokumenter (POST .../meddelelser). Da emnelisten kan udvides løbende uden en
+ny API-version, bør den hentes dynamisk.
+Alle oplysninger fra GET-kald filtreres efter API-brugerens relation til sagen og de oplysninger, skif-
+teretten har valgt at dele. GET-kald på lister returnerer en tom liste (200 OK), hvis API-brugeren
+ikke har adgang til elementerne, mens opslag på et enkeltstående element returnerer 404 Not
+Found.
+Krav og tilgodehavender i tvangsopløsningssager (/v2/tvangsoploesnings-
+sagerEkstern)
+Registrering og administration af krav, nulkrav (kun Skatteforvaltningen) og tilgodehavender via
+API'et er kun relevant for tvangsopløsningssager og ligger under /v2/tvangsoploesningssa-
+gerEkstern/{sagId} i insolvens-dirigent-ekstern-oas.yaml.
+Endpoints til krav og tilgodehavender er fælles for alle roller, og adgangen styres af brugerens rolle
+i tvangsopløsningssagen:
+1. Kreditor: Kreditor (rollen inkluderer både kreditor og debitor i systemet) kan registrere nye krav
+og tilgodehavender samt læse, rette og slette egne registrerede krav.
+37
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+2. Bruger uden forudgående relation til sagen: Kan anmelde et krav eller registrere et tilgode-
+havende og opnår derved automatisk kreditorrelation til sagen.
+3. Likvidator: Har læseadgang til alle registrerede krav og tilgodehavender på sagen, kan selv
+registrere, rette og slette egne krav, men kan ikke slette eller rette krav registrerede af andre.
+Et krav anmeldes eksempelvis med POST /v2/tvangsoploesningssagerEkstern/{sagId}/krav, hvor
+request body udfyldes efter feltdefinitionerne i OpenAPI-specifikationen. Skal der vedlægges ét el-
+ler flere bilag, uploades disse først til Dokumentlager-API'et (afsnit 4.7.7), hvorefter dokument-id'-
+erne angives i request body.
+Token-anvendelse og adgang som professionel aktør (likvidator, kurator
+m.fl.)
+Alle V2-endpoints i afsnit 4.5.1 og 4.5.2 kan kaldes med enten et direkte token (virksomhed, per-
+son eller medarbejder, jf. afsnit 3.1) eller et indirekte, vekslet token (adgangsprofil, jf. afsnit 3.2).
+Anvendere af indirekte, vekslet token: Det indirekte token veksles med den pågældende bruge-
+res adgangsprofil-id (se afsnit 3.2). Det vekslede token giver udvidet adgang på sagen, herunder
+indsigt i samtlige sagsdeltagere.
+API Fejlkoder
+API'et returnerer forretningsfejlkoder i apiError.errorDetails[].code, når en handling afvises pga. for-
+retningsregler eller validering. Tabellen nedenfor viser de forretningsfejlkoder, der kan returneres
+fra V2-endpoints på tværs af sagstyper:
+Fejlkode Beskrivelse
+sag.registrering.krav.op-
+gjortdato.fremtidig
+Opgjortdato skal være dags dato eller tidligere.
+sag.registrering.nul-
+krav.ingen.bilag.el-
+ler.bemaerkning
+Du skal enten indtaste en bemærkning eller uploade bilag.
+sag.registrering.nul-
+krav.er.ikke.gaelds-
+styrelsen
+Der er blevet forsøgt oprettelse af et nul-krav men det var ikke
+gældsstyrelsen.
+sag.registrering.sag.af-
+sluttet
+{0} kan ikke registreres på sagen, da sagen er afsluttet.
+sag.registrering.tilgode-
+havende.udbetalt-
+dato.fremtidig
+Udbetaltdato skal være dags dato eller tidligere.
+sag.registrering.tredje-
+part.anden.tom
+Anden tredjepart må ikke være tom, når 'ANDEN' part-type er
+sat.
+sag.status.afsluttet Sagen er i en afsluttet status, og må derfor ikke opdateres til
+en anden status.
+skriv.til.ret-
+ten.emne.ugyldigt
+Det valgte emne er ikke gyldigt for sagstypen.
+38
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Fejlkode Beskrivelse
+skriv.til.retten.fri-
+tekst.emne.paaekraevet
+Emne skal udfyldes, når kategorien Andet vælges.
+skriv.til.retten.fri-
+tekst.emne.for.langt
+Emne må højst være 50 tegn.
+skriv.til.retten.fri-
+tekst.emne.kun.andet
+Fritekstemne må kun angives, når kategorien Andet vælges.
+skriv.til.retten.med-
+delelse.eller.dokumen-
+ter.paaekraevet
+Der skal enten angives en meddelelse eller vedhæftes mindst
+ét dokument.
+aktion.ekstern.haand-
+ter.frist.ugyldig.be-
+svarelse
+Fritekst, bilag eller begge skal angives.
+aktion.ekstern.haand-
+ter.frist.ikke.modta-
+ger
+Kun modtagere af fristen kan håndtere den.
+4.6 API-adgang til straffesager
+Straffesager hentes med operationen getSagEksternApi som beskrevet i straffe-ekstern-api-
+oas.yaml . Der kræves et sags-id for at kunne hente sagen, og disse kan opdages via Sagshylde-
+API’et med hentSager API’et (se nedenfor). Der returneres kun data om sagen, der er publiceret til
+den konkrete beskikkede advokat, der er repræsenteret ved det anvendte token.
+Bilag og skrivelser angiver et ”dokumentId”, som kan bruges til at hente dokumentet, som beskre-
+vet i 4.7.6 Dokumentlager-API.
+Bemærk: Adgang til straffesagerne kræver et token, der indeholder ”straffesag” i sit scope, hvilket
+skal angives ved token-udstedelse, og efterfølgende skal veksles til et indirekte token, der repræ-
+senterer den konkrete advokat, sagen skal hentes på vegne af.
+4.7 API-adgang til støtteservices
+Ud over API-kald, der er specifikke for de enkelte sagsområder, findes der en række supplerende
+API’er.
+Sagshylde-API
+Sagshylde, som muliggør hentning og fremsøgning af sagsinfomation ud fra CVR-nummer og navn
+(operation: soegSager), eller hentning af ”mine sager” (hentSager), altså sager, som vedrører to-
+kenindehaveren (fx likvidator eller kreditor). Der kan anvendes enten direkte eller indirekte tokens
+til søgning og ”mine sager”.
+Operationerne er beskrevet i sagslager-oas.yaml.
+39
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Person-API
+Opslag af personoplysninger sker som beskrevet i person-oas.yaml-specifikationen. Detaljemæng-
+den, der returneres, afhænger af den relation, man igennem sagsdeltagelsen har til den angivne
+person. Relationen afhænger af det anvendte token, der kan være både direkte eller indirekte.
+Opslag på personoplysninger sker ud fra person-id (udstedt af CPR-kontoret). CPR-numre anven-
+des ikke i API’et.
+Virksomhed-API
+Virksomhedsoplysninger kan hentes fra systemet og afspejler Det Centrale Virksomhedsregister
+(CVR).
+Operationerne og svarstrukturer er beskrevet i virksomhed-oas.yaml.
+Adresseinformationer og adresse-API
+Ved forespørgsel på personoplysninger (Person-API) eller virksomhedsoplysninger (Virksomhed-
+API) returneres bl.a. adresseoplysninger samt et tilknyttet adresse-id (også kendt som ”darId”).
+Adresse-id en entydig identifikator for en adresse (enhedsadresse) i det danske adresseregister.
+Dette ID kan anvendes som nøgle til opslag i adresseregisteret, som kan tilgås via Datafordeleren.
+Grundlæggene adresseoplysninger er derudover udstillet på ”/adresse/<darId>”. Opslaget kræver
+gyldigt token fra kalderen.
+Retskreds-API
+Retskreds API’et indeholder muligheder for at hente relativt statiske data om de enkelte rets-
+kredse, dertilhørende embeder og disses kontaktoplysninger.
+Filen, retskreds-oas.yaml, specificerer de enkelte operationer og strukturer for retskredse og em-
+beder.
+Retskreds-API’et udstilles uden krav til kalderen.
+Dokumentlager-API
+Bilag i forbindelse med tvangsopløsningssager (og fremtidige sagsområder) håndteres igennem
+dokumentlageret, hvor bilaget uploades inden det anvendes i fx registreringen af et krav eller an-
+vendelse i en anmodning ved, at det bliver refereret ved sit id. Dokumentet vil tilhøre API-brugeren
+bag det anvendte token, som kan være af den direkte eller indirekte type.
+Dokumentlagerets operationer er beskrevet i dokument-lager-ekstern-oas.yaml.
+Upload af dokumenter sker i operationen addV2 ved en POST-request til /v2/dokumenter med en
+body indeholdende et gyldigt PDF-dokument. Bemærk, at headers skal udfyldes i henhold til speci-
+fikationen, herunder at content type skal angives som ”application/octet-stream”.
+40
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Response vil indeholde metadata om dokumentet, eksempelvis:
+{
+"id": "52cd5ed9-41b5-4cbf-a68e-2da142ad05ad",
+"navn": "Faktura129874.pdf",
+"oprettet": "2024-03-24T13:42:22.572260213Z",
+"stoerelse": 42525,
+"type": "application/pdf",
+"metadata": {
+"oprettet_af_part_type": "virksomhed",
+"oprettet_af_part_id": "21659509"
+}
+}
+Figur 9: Response på oprettelse af dokument
+Hentning af dokument foretages ved operationen getFil, som returnerer selve filindholdet i re-
+sponse body. Det oprindelige filnavn returneres som del af ”Content-Disposition”-headeren.
+5. Ændringer & API-versionering
+Nedenstående beskriver den generelle proces for ændringer og API-versionering. Der anvendes
+semantisk versionering i de enkelte API’ers versionsnumre.
+Domstolsstyrelsen vil bestræbe sig på, at ændringer af domstolenes Skifteportal og Straffesags-
+portal, der medfører markant større ændringer af løsningen med deraf følgende behov for ændrin-
+ger i API’et, forekommer i et så begrænset omfang som muligt.
+Ændringer med betydning for API-anvendernes integrationer håndteres via versionsstyring af
+API'et. Nye versioner kan indeholde både funktionelle udvidelser, ændringer og eventuelle brea-
+king changes.
+Det tilstræbes, at ændringer implementeres bagudkompatibelt, hvor dette er muligt. Når en ny ver-
+sion af API'et offentliggøres, vil tidligere versioner som udgangspunkt blive markeret som depreca-
+ted. Deprecated versioner kan fortsat anvendes i en nærmere angivet periode, men vil ikke blive
+videreudviklet med nye funktioner.
+API-anvendere opfordres til løbende at planlægge overgang til den seneste version. Opdateret do-
+kumentation og tilhørende OpenAPI-specifikationer offentliggøres i forbindelse med nye versioner.
+Der opereres med tre forskellige kategorier ved opdatering af API’et, som per semantisk versione-
+ring.
+41
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+5.1 Større ændringer – ”Major”
+Større tilpasninger og ændringer, som er breaking og kan medføre inkompatibilitet med eksiste-
+rende integrationer, implementeres som en ny version af API’et. Major changes kan blandt andet
+omfatte ændringer i datastrukturer, fjernelse af felter eller tilføjelse af nye obligatoriske felter.
+Nye major-versioner af API’et stilles til rådighed i API-testmiljøet hurtigst muligt efter implemente-
+ring og frigives efterfølgende til produktion. Breaking changes introduceres ikke i eksisterende ma-
+jor-versioner, således at integrationer mod tidligere versioner fortsat fungerer uændret.
+5.2 Mindre ændringer – ”Minor”
+Udvidelser og tilføjelser til API’et implementeres som nye minor-versioner af API’et.
+Minor changes kan omfatte nye endpoints, nye felter, nye optionelle felter og anden bagudkompati-
+bel funktionalitet. Ændringer i en minor-version er bagudkompatible og kræver som udgangspunkt
+ikke ændringer i eksisterende integrationer. Opdateret dokumentation og tilhørende OpenAPI-spe-
+cifikationer offentliggøres i forbindelse med udgivelsen af den nye version.
+5.3 Løbende fejlrettelser – ”Patch”
+Der udrulles regelmæssige releases af domstolenes Skifteportal og Straffesagsportal, hvor der
+ikke forventes nedetid, og hvor der ikke indføres ny eller ikke-kompatibel funktionalitet.
+5.4 Undtagelser
+Ændringer, der er nødvendige grundet situationer i forbindelse med kritiske fejl, sikkerhed og æn-
+dret lovgivning.
+6. Fejlhåndtering og teknisk support
+Testmiljø
+Fejlblanketten skal anvendes til indberetning af fejl ved afprøvning af domstolenes Skifteportals og
+Straffesagsportals API-testmiljø. Hvis du oplever flere fejl, så udfyld venligst en separat blanket til
+hver. Fejlblanketten sendes til ssp-api@domstolsstyrelsen.dk
+Du kan finde fejlblanketten til indberetning af fejl under punktet ‘Fejlblanket til fejl i testmiljø’ her:
+https://www.domstol.dk/media/xdskrj5d/fejlblanket-api-testmiljoe-straffesagsportalen-og-skiftepor-
+talen.pdf
+Der må gerne vedlægges screenshots af fejl i systemet.
+42
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Produktionsmiljø
+I tilfælde af at du oplever fejl eller tekniske problemer i forbindelse med integration til domstolenes
+Skifteportal eller Straffesagsportal, kan du altid følge med i aktuel driftsstatus på ’Kendte fejl og
+mangler’ via linket her: https://www.domstol.dk/selvbetjening/blanketter-og-vejledninger/minskifte-
+sagdk/kendte-fejl-og-mangler/.
+For at kunne anvende API-løsningen, er det vigtigt, at det rette OCES3 organisationscertifikat be-
+nyttes, er gyldigt samt registeret til produktion. Som udgangspunkt bør du også sikre, at Client ID og
+Client Secret er korrekt indtastet.
+Såfremt du oplever fejl i forbindelse med domstolenes Skifteportals eller Straffesagsportals API-kald
+i produktion, kan du kontakte supporten ved at udfylde en kontaktformular. Kontaktformular for Skif-
+teportalen findes via linket her: https://domstol.dk/selvbetjening/blanketter-og-vejledninger/minskif-
+tesagdk/kontakt-supporten-for-minskiftesagdk/. Kontaktformular for Straffesagsportalen findes via
+linket her: https://www.domstol.dk/selvbetjening/blanketter-og-vejledninger/straffesagsporta-
+lendk/kontakt-supporten-for-straffesagsportalendk/#straffesagsportalen. Bemærk, at du i den valgte
+kontaktformular skal notere, at fejlen er opstået via henholdsvis API-tilslutning til Skifteportalen eller
+API-tilslutning til Straffesagsportalen. Sørg gerne for at dokumentere fejl med en uddybende beskri-
+velse samt screenshots.
+43
+API-tilslutning til Skifteportalen og Straffesagsportalen – Teknisk Integrationsvejledning
+Domstolsstyrelsen

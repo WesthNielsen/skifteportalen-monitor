@@ -1,0 +1,4188 @@
+openapi: 3.0.3
+info:
+  title: Insolvens - eksternt API til insolvenssager
+  description: |-
+    API til eksterne parter (kreditorer, likvidatorer, tidligere ledelse, advokater, myndigheder m.fl.) der skal læse og handle på insolvenssager hos domstolene. Hvad den enkelte bruger kan se og gøre afhænger af brugerens rolle og relation til sagen.
+
+    ## Versioner
+    - **V2** (`/v2/...`) er den aktuelle version og dækker alle 7 sagstyper: tvangsopløsning, konkurs, gældssanering, rekonstruktion, forebyggende rekonstruktion, ægtefælleskifte og andre sager efter selskabsloven.
+    - **V1** (stier uden `/v2/`) er markeret `deprecated` og udfases efter en overgangsperiode (datoen for endelig udfasning er endnu ikke fastlagt og meldes ud i god tid). Hver V1-operation angiver sin erstatning i V2. Nye integrationer skal bruge V2.
+
+    ## Godkendelse
+    Alle kald kræver et bearer-token (JWT). Se sikkerhedsskemaet `bearerAuth` for token-typer og hvem der må kalde hvad.
+
+    ## Fejlhåndtering og adgang
+    - 401: manglende eller ugyldigt token.
+    - 403: tokenet har ikke en rolle der må kalde endpointet, eller brugeren har en relation til sagen men må ikke udføre handlingen.
+    - 404: sagen (eller det tilgåede objekt) findes ikke, eller brugeren har ingen relation til sagen.
+    - Filtrerede lister uden match returnerer 200 med tom liste.
+    - 400: validering eller forretningsregel brudt; forretningskoden står i apiError.errorDetails[].code.
+    - 409: handlingen er i konflikt med objektets aktuelle tilstand.
+    - 500: uventet fejl.
+
+    ## Succeskoder uden body
+    Endpoints uden svarbody bruger 200 (PUT/DELETE), 201 (POST der opretter, fx besvarelse af frist og nulkrav) og 204 (skriv til retten). Koderne er bevaret og beskrevet eksplicit, da en ensretning er en breaking change for eksisterende klienter.
+
+    ## Bilag og dokumenter
+    Bilag og andre dokumenter uploades og hentes via dokumentlagerets API, som ikke er en del af denne specifikation. Et uploadet dokument får et teknisk id, som angives som dokumentReferenceV2.id i de kald her der tager bilag. Størrelses- og filtypekrav samt adgangsregler fastsættes af dokumentlageret. Ved download giver dokumentlageret 403 hvis brugeren ikke har adgang og 404 hvis dokumentet ikke findes.
+
+    ## Dato og tid
+    Felter med format date-time er ISO 8601 med tidszoneoffset (UTC eller dansk tid, Europe/Copenhagen); klienter skal tolke offset og ikke antage lokal tid. Felter med format date er kalenderdatoer i dansk tid (Europe/Copenhagen) uden tidszone. Konvention for nye felter er ...dato for date og ...tidspunkt for date-time. Eksisterende afvigelser (fx oprettet, udpeget, fratradt) bevares, da omdøbning er en breaking change.
+  version: 8.13.0
+  contact:
+    name: Domstolene - Insolvens
+tags:
+- name: insolvensDirigentEkstern
+  description: Operationer i det eksterne API til insolvenssager.
+paths:
+  /tvangsoploesningssagerEkstern/{sagId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentTvangsoploesningssag
+      summary: Hent tvangsopløsningssag.
+      deprecated: true
+      description: Hent specifik tvangsopløsningssag udfra dets sag id (ikke sagsnummer).
+        Udgår efter en overgangsperiode (datoen for endelig udfasning er endnu ikke
+        fastlagt). Ingen direkte v2-erstatning; brug i stedet GET /v2/insolvenssagerEkstern/{sagId},
+        der dækker alle sagstyper.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tvangsoploesningssagEkstern'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/sagens-gang:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/page'
+    - $ref: '#/components/parameters/size'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: getSagensGangListe
+      summary: Hent sagens gang.
+      deprecated: true
+      description: Hent liste (side) af sagens gang hændelser som ekstern (pånær likvidator).
+        Udgår efter en overgangsperiode (datoen for endelig udfasning er endnu ikke
+        fastlagt). Erstattes af GET /v2/insolvenssagerEkstern/{sagId}/sagens-gang.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagensGangBegivenhed'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerTidlLedelse/{sagId}/erklaering:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: postErklaering
+      summary: Indsend erklæring.
+      deprecated: true
+      description: Indsend erklæring. Udgår efter en overgangsperiode (datoen for
+        endelig udfasning er endnu ikke fastlagt). Erstattes af POST /v2/insolvenssagerEkstern/{sagId}/skriv-til-retten.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/erklaering'
+      responses:
+        '201':
+          description: Erklæring er gemt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/erklaering'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerTidlLedelse/{sagId}/kontaktoplysninger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    put:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: updateKontaktoplysninger
+      summary: Opdater kontaktoplysninger.
+      deprecated: true
+      description: Opdater kontaktoplysningerne for direktøren selv. Udgår efter en
+        overgangsperiode (datoen for endelig udfasning er endnu ikke fastlagt). Læsning
+        erstattes af GET /v2/insolvenssagerEkstern/{sagId}/sagsdeltagere/{sagsdeltagerId},
+        og skrivning erstattes af PUT /v2/insolvenssagerEkstern/{sagId}/sagsdeltagere/{sagsdeltagerId}.
+        Den indloggede bruger må kun opdatere egne kontaktoplysninger.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kontaktoplysningerOpdatering'
+      responses:
+        '200':
+          description: Kontaktoplysninger er opdateret.
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/kaeremaal:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: opretKaeremaal
+      summary: Opret kæremål.
+      deprecated: true
+      description: Opret kæremål som ekstern til sagen. Udgår efter en overgangsperiode
+        (datoen for endelig udfasning er endnu ikke fastlagt) - kæremål videreføres
+        IKKE som selvstændigt v2-endpoint. Erstattes af POST /v2/insolvenssagerEkstern/{sagId}/skriv-til-retten.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opretKaeremaal'
+      responses:
+        '201':
+          description: Kæremål oprettet succesfuldt.
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/afgoerelser:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentAfgoerelser
+      summary: Hent afgørelser.
+      deprecated: true
+      description: Hent en liste af afgørelser (retsbøger) på sagen. Udgår efter en
+        overgangsperiode (datoen for endelig udfasning er endnu ikke fastlagt) - videreføres
+        IKKE som selvstændigt v2-endpoint, da formålet udelukkende var at understøtte
+        kæremål (som også udgår). Erstattes af GET /v2/insolvenssagerEkstern/{sagId}/retsboeger.
+      responses:
+        '200':
+          description: Liste af afgørelser på sagen hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/afgoerelse'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/krav:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      operationId: hentKrav
+      summary: Hent krav.
+      deprecated: true
+      description: Hent en side af krav der matcher ønsket sortering, sammen med en
+        samlet summering for alle krav. Udgår efter en overgangsperiode (datoen for
+        endelig udfasning er endnu ikke fastlagt). Erstattes af GET /v2/tvangsoploesningssagerEkstern/{sagId}/krav,
+        hvor resultatet filtreres efter brugerens relation til sagen.
+      responses:
+        '200':
+          description: Side af krav hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kravListe'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/tilgodehavender:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      operationId: hentTilgodehavender
+      summary: Hent tilgodehavender.
+      deprecated: true
+      description: Hent en side af tilgodehavender der matcher ønsket sortering, sammen
+        med en samlet summering for alle tilgodehavender. Udgår efter en overgangsperiode
+        (datoen for endelig udfasning er endnu ikke fastlagt). Erstattes af GET /v2/tvangsoploesningssagerEkstern/{sagId}/tilgodehavender,
+        hvor resultatet filtreres efter brugerens relation til sagen.
+      responses:
+        '200':
+          description: Side af tilgodehavender hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavendeListe'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/retsboeger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      operationId: hentRetsboeger
+      summary: Hent retsbøger.
+      deprecated: true
+      description: Hent en side af retsbøger der matcher ønsket sortering. Udgår efter
+        en overgangsperiode (datoen for endelig udfasning er endnu ikke fastlagt).
+        Erstattes af GET /v2/insolvenssagerEkstern/{sagId}/retsboeger.
+      responses:
+        '200':
+          description: Side af retsbøger hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/retsbogEkstern'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/meddelelser:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentMeddelelser
+      summary: Hent meddelelser.
+      deprecated: true
+      description: Hent alle meddelelser til brugeren på sagen. Udgår efter en overgangsperiode
+        (datoen for endelig udfasning er endnu ikke fastlagt). Erstattes af GET /v2/insolvenssagerEkstern/{sagId}/meddelelser.
+      responses:
+        '200':
+          description: Meddelelser hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/detaljeretMeddelelse'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /tvangsoploesningssagerEkstern/{sagId}/frister/{fristId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/fristId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: haandterFrist
+      summary: Besvar frist.
+      deprecated: true
+      description: Håndter manuelt oprettet frist. Udgår efter en overgangsperiode
+        (datoen for endelig udfasning er endnu ikke fastlagt). Erstattes af POST /v2/insolvenssagerEkstern/{sagId}/frister/{fristId}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/besvarelseRequest'
+      responses:
+        '201':
+          description: Besvarelse er gemt.
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern:
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: opretInsolvenssagEksternV2
+      summary: Opret insolvenssag.
+      description: Opret en ny insolvenssag som ekstern bruger. Sager af typen TVANGSOPLOESNING
+        kan ikke oprettes via dette endpoint, da tvangsopløsningssager oprettes af
+        Erhvervsstyrelsen. Succes returnerer 201 med den oprettede sag.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opretInsolvenssagEksternV2'
+      responses:
+        '201':
+          description: Insolvenssag er oprettet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/oprettetInsolvenssagEksternV2'
+        '400':
+          description: 'Ugyldigt kald. Forretningskode i apiError.errorDetails[].code:
+            embedskode.ikke.fundet (retskreds findes ikke). Øvrige valideringsfejl
+            på requestbody giver også 400.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentInsolvenssagEksternV2
+      summary: Hent insolvenssag.
+      description: Hent specifik insolvenssag udfra dets sagId (ikke sagsnummer),
+        uanset sagstype. Erstatter GET /tvangsoploesningssagerEkstern/{sagId}, men
+        dækker alle 7 sagstyper.
+      responses:
+        '200':
+          description: Insolvenssagen hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/insolvenssagEksternV2'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/sagsdeltagere:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/pageV2'
+    - $ref: '#/components/parameters/sizeV2'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentSagsdeltagereEksternV2
+      summary: Hent sagsdeltagere.
+      description: Hent (en side af) de sagsdeltagere på sagen som den indloggede
+        eksterne bruger har adgang til at se. Adgangen er rollebaseret - listen filtreres
+        serverside efter hvilken relation den indloggede bruger selv har til sagen
+        og er derfor IKKE nødvendigvis alle sagsdeltagere på sagen. Paginering via
+        page/size (0-baseret, size 1-100, default 20); listen kan ikke sorteres via
+        API'et. Ugyldige pagineringsparametre giver 400.
+      responses:
+        '200':
+          description: Side af sagsdeltagere hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagsdeltagerEksternV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/sagsdeltagere
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/sagsdeltagere/{sagsdeltagerId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/sagsdeltagerId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentSagsdeltagerEksternV2
+      summary: Hent sagsdeltager.
+      description: Hent en specifik sagsdeltager på sagen. Kun tilgængelig hvis den
+        indloggede eksterne bruger har adgang til at se netop denne sagsdeltager (rollebaseret).
+        Erstatter læsning af GET /tvangsoploesningssagerTidlLedelse/{sagId}/kontaktoplysninger
+        for egne kontaktoplysninger.
+      responses:
+        '200':
+          description: Sagsdeltager hentet med succes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/sagsdeltagerEksternV2'
+        '404':
+          description: Sagen eller sagsdeltageren findes ikke, eller den indloggede
+            bruger har ikke adgang til at se denne sagsdeltager.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/sagsdeltagere/6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: opdaterSagsdeltagerKontaktoplysningerEksternV2
+      summary: Opdater egne kontaktoplysninger som sagsdeltager.
+      description: Opdater kontaktoplysningerne for sig selv som sagsdeltager. Kan
+        kun bruges til at opdatere den indloggede brugers egen sagsdeltager-post,
+        ikke andres; en bruger med rollen INDSENDER må også opdatere. PUT har fuld-erstatningssemantik
+        for kontaktoplysningerne, så felter der udelades eller er null nulstilles.
+        403 gives når brugeren har relation til sagen men ikke må opdatere den pågældende
+        sagsdeltager; 404 når sagen eller sagsdeltageren ikke findes eller er skjult
+        for brugeren. Erstatter skrivning via PUT /tvangsoploesningssagerTidlLedelse/{sagId}/kontaktoplysninger.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/opdaterSagsdeltagerKontaktoplysningerEksternV2'
+      responses:
+        '200':
+          description: Kontaktoplysninger er opdateret (200 uden body).
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          description: Sagen eller sagsdeltageren findes ikke, eller brugeren har
+            ingen relation til sagen eller til sagsdeltageren.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/sagsdeltagere/6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          description: Ugyldigt kald. Requestbody er ugyldig, fx ugyldigt telefonnummer
+            eller e-mail. Forretningskoden findes i apiError.errorDetails[].code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/sagens-gang:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/pageV2'
+    - $ref: '#/components/parameters/sizeV2'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentSagensGangV2
+      summary: Hent sagens gang.
+      description: Hent liste (side) af sagens gang-hændelser på en insolvenssag som
+        ekstern bruger, uanset sagstype. Adgang afgøres af brugerens rolle på sagen.
+        Paginering via page/size (0-baseret, size 1-100, default 20); listen kan ikke
+        sorteres via API'et. Ugyldige pagineringsparametre giver 400.
+      responses:
+        '200':
+          description: Side af sagens gang-hændelser hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagensGangBegivenhedV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/sagens-gang
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/retsboeger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/pageV2'
+      - $ref: '#/components/parameters/sizeV2'
+      - $ref: '#/components/parameters/sortRetsboegerV2'
+      - $ref: '#/components/parameters/directionV2'
+      operationId: hentRetsboegerV2
+      summary: Hent retsbøger.
+      description: Hent en side af retsbøger der matcher ønsket sortering.
+      responses:
+        '200':
+          description: Side af retsbøger hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/retsbogEksternV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/retsboeger
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/meddelelser:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentMeddelelserV2
+      summary: Hent meddelelser.
+      description: Hent alle meddelelser til brugeren på sagen. Listen er ikke pagineret,
+        alle meddelelser returneres i ét svar.
+      responses:
+        '200':
+          description: Meddelelser hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/meddelelseV2'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/meddelelser
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/skriv-til-retten:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: skrivTilRettenV2
+      summary: Skriv til retten.
+      description: Send en skrivelse til retten på sagen med et valgt emne og eventuelle
+        bilag. Skrivelsen oprettes som et dokument på sagen, og bilagene lægges i
+        samme dokumentmappe. Emnet vælges via den tekniske nøgle (emneKey) fra GET
+        /v2/insolvenssagerEkstern/{sagId}/skriv-til-retten/emner. Ved emneKey ANDET__FRITEKST
+        kan et kort fritekstemne angives i fritekstEmne. Der skal angives tekst eller
+        mindst ét bilag. Afsenderen er altid den indloggede bruger. Der oprettes ingen
+        henvendelsestråd. Bilag skal være uploadet af den indloggede bruger på sagen;
+        andres bilag giver 403. Succes returnerer 204 uden body. Erstatter henvendelser,
+        erklæring, redegørelse, konkursbegæring, fristudsættelse, inhabilitet, revisor,
+        yderligere likvidatorer og kæremål.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/skrivTilRettenV2'
+            example:
+              emneKey: ANMODNING__AKTINDSIGT
+              tekst: Jeg anmoder om aktindsigt i sagen.
+      responses:
+        '204':
+          description: Skrivelsen og eventuelle bilag er oprettet.
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/skriv-til-retten
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          description: 'Ugyldigt kald. Forretningskoder i apiError.errorDetails[].code:
+            skriv.til.retten.emne.ugyldigt, skriv.til.retten.fritekst.emne.paaekraevet,
+            skriv.til.retten.fritekst.emne.kun.andet, skriv.til.retten.fritekst.emne.for.langt
+            og skriv.til.retten.meddelelse.eller.dokumenter.paaekraevet.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/skriv-til-retten/emner:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentSkrivTilRettenEmnerV2
+      summary: Hent emner til skriv til retten.
+      description: Hent de emner, der kan vælges i skriv til retten på sagen. Listen
+        afhænger af sagens sagstype og kan udvides uden ny version af API'et. Den
+        tekniske nøgle (key) sendes ved oprettelse af skrivelsen.
+      responses:
+        '200':
+          description: Emner hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/skrivTilRettenEmneV2'
+              example:
+              - kategori: Anmodning
+                emne: Aktindsigt
+                key: ANMODNING__AKTINDSIGT
+              - kategori: Andet
+                emne: Andet
+                key: ANDET__FRITEKST
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/skriv-til-retten/emner
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/frister:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentFristerV2
+      summary: Hent frister.
+      description: Hent frister på sagen der er tiltænkt den indloggede bruger. Frister
+        der ikke er tiltænkt brugerens rolle på sagen indgår ikke i listen. Listen
+        er ikke pagineret, alle frister returneres i ét svar.
+      responses:
+        '200':
+          description: Frister hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/fristEksternV2'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/frister
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/dokumenter:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentDokumenterV2
+      summary: Hent sagsdokumenter.
+      description: Hent sagsdokumenter på sagen, grupperet i de dokumentsamlinger
+        de oprindeligt blev tilføjet i (fx flere bilag indsendt i samme meddelelse).
+        Listen er ikke pagineret, alle dokumentsamlinger returneres i ét svar.
+      responses:
+        '200':
+          description: Dokumenter hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/dokumentSamlingEksternV2'
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/dokumenter
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/insolvenssagerEkstern/{sagId}/frister/{fristId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/fristId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: besvarFristV2
+      summary: Besvar frist.
+      description: Besvar en frist der er tiltænkt den indloggede bruger. Der skal
+        angives fritekst (3-1200 tegn) eller mindst ét bilag. Succes returnerer 201
+        uden body. Gentaget besvarelse af samme frist giver 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/besvarelseRequestV2'
+      responses:
+        '201':
+          description: Besvarelse er gemt.
+        '404':
+          description: Sagen eller fristen findes ikke, eller brugeren har ingen relation
+            til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/frister/4f8c5f64-5717-4562-b3fc-2c963f66afc2
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          description: 'Ugyldigt kald. Forretningskoder i apiError.errorDetails[].code:
+            aktion.ekstern.haandter.frist.ikke.modtager (fristen er ikke tiltænkt
+            den indloggede bruger) og aktion.ekstern.haandter.frist.ugyldig.besvarelse
+            (hverken gyldig fritekst eller bilag).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/tvangsoploesningssagerEkstern/{sagId}/krav:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/pageV2'
+      - $ref: '#/components/parameters/sizeV2'
+      - $ref: '#/components/parameters/sortKravV2'
+      - $ref: '#/components/parameters/directionV2'
+      operationId: hentAlleKravEksternV2
+      summary: Hent krav.
+      description: Hent en side af krav på tvangsopløsningssagen. En likvidator får
+        alle krav, en kreditor får kun sine egne krav, og en ekstern bruger uden relation
+        til sagen får en tom liste (200). 404 gives hvis sagen ikke findes eller ikke
+        er en tvangsopløsningssag. Samlet antal krav returneres i headeren X-Total-Count.
+      responses:
+        '200':
+          description: Liste af anmeldte krav for tvangsopløsningssagen returneret.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/kravV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller sagen er ikke en tvangsopløsningssag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/krav
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: anmeldKravV2
+      summary: Anmeld krav.
+      description: Anmeld et nyt krav til tvangsopløsningssagen som kreditor. Denne
+        skrivehandling er forbeholdt en bruger med kreditorrelation til sagen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdateringV2'
+      responses:
+        '201':
+          description: Svar på anmeldelse af krav.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kravV2'
+        '404':
+          description: Sagen findes ikke, sagen er ikke en tvangsopløsningssag, eller
+            brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/krav
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/tvangsoploesningssagerEkstern/{sagId}/krav/{kravId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/kravId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentKravEksternV2
+      summary: Hent krav.
+      description: Hent et specifikt krav på tvangsopløsningssagen udfra dets kravId.
+        En likvidator kan hente alle krav, mens en kreditor kun kan hente egne krav.
+        En bruger uden relevant relation får ikke kravdata.
+      responses:
+        '200':
+          description: Krav på tvangsopløsningssag hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kravV2'
+        '404':
+          description: Sagen eller kravet findes ikke, eller brugeren har ingen relation
+            til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/krav/3fa85f64-5717-4562-b3fc-2c963f66afa6
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: opdaterKravV2
+      summary: Opdater krav.
+      description: Opdater et eksisterende krav på tvangsopløsningssagen som kreditor.
+        Likvidatorer kan læse krav, men kan ikke opdatere dem via dette endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdateringV2'
+      responses:
+        '200':
+          description: Krav redigeret succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kravV2'
+        '404':
+          description: Sagen eller kravet findes ikke, eller brugeren har ingen relation
+            til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/krav/3fa85f64-5717-4562-b3fc-2c963f66afa6
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: sletKravV2
+      summary: Slet krav.
+      description: Slet et eksisterende krav på tvangsopløsningssagen som kreditor.
+        Likvidatorer kan læse krav, men kan ikke slette dem via dette endpoint.
+      responses:
+        '200':
+          description: Krav slettet succesfuldt.
+        '404':
+          description: Sagen eller kravet findes ikke, eller brugeren har ingen relation
+            til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/krav/3fa85f64-5717-4562-b3fc-2c963f66afa6
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/tvangsoploesningssagerEkstern/{sagId}/nulkrav:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: anmeldNulkravV2
+      summary: Anmeld nulkrav.
+      description: Anmeld nulkrav til en tvangsopløsningssag. Nulkrav kan kun anmeldes
+        af Gældsstyrelsen og kræver enten mindst ét bilag eller en bemærkning. Et
+        nulkrav til en sag hvor der allerede er anmeldt nulkrav giver 409. Succes
+        returnerer 201 uden body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/nulkravOpdateringKreditorV2'
+      responses:
+        '201':
+          description: Svar på anmeldelse af 0-krav.
+        '404':
+          description: Sagen findes ikke, eller brugeren har ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/nulkrav
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          description: 'Ugyldigt kald. Forretningskoder i apiError.errorDetails[].code:
+            sag.registrering.nulkrav.er.ikke.gaeldsstyrelsen (afsenderen er ikke Gældsstyrelsen)
+            og sag.registrering.nulkrav.ingen.bilag.eller.bemaerkning (hverken bilag
+            eller bemærkning angivet).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/tvangsoploesningssagerEkstern/{sagId}/tilgodehavender:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      parameters:
+      - $ref: '#/components/parameters/pageV2'
+      - $ref: '#/components/parameters/sizeV2'
+      - $ref: '#/components/parameters/sortTilgodehavenderV2'
+      - $ref: '#/components/parameters/directionV2'
+      operationId: hentAlleTilgodehavenderEksternV2
+      summary: Hent tilgodehavender.
+      description: Hent en side af tilgodehavender på tvangsopløsningssagen. En likvidator
+        får alle tilgodehavender, en kreditor får kun sine egne tilgodehavender, og
+        en ekstern bruger uden relation til sagen får en tom liste (200). 404 gives
+        hvis sagen ikke findes eller ikke er en tvangsopløsningssag. Samlet antal
+        tilgodehavender returneres i headeren X-Total-Count.
+      responses:
+        '200':
+          description: Viser en liste af tilgodehavender.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/tilgodehavendeV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        '404':
+          description: Sagen findes ikke, eller sagen er ikke en tvangsopløsningssag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/tilgodehavender
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: registrerTilgodehavendeV2
+      summary: Registrer tilgodehavende.
+      description: Registrer et nyt tilgodehavende på tvangsopløsningssagen. En ekstern
+        bruger kan oprette et tilgodehavende uden eksisterende relation; ved succes
+        oprettes brugerens kreditorrelation til sagen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdateringV2'
+      responses:
+        '201':
+          description: Tilgodehavende oprettet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavendeV2'
+        '404':
+          description: Sagen findes ikke, eller sagen er ikke en tvangsopløsningssag.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/tilgodehavender
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/tvangsoploesningssagerEkstern/{sagId}/tilgodehavender/{tilgodehavendeId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - $ref: '#/components/parameters/tilgodehavendeId'
+    get:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: hentTilgodehavendeEksternV2
+      summary: Hent tilgodehavende.
+      description: Hent et specifikt tilgodehavende på tvangsopløsningssagen udfra
+        dets tilgodehavendeId. En likvidator kan hente alle tilgodehavender, mens
+        en kreditor kun kan hente egne tilgodehavender. En bruger uden relevant relation
+        får ikke tilgodehavendedata.
+      responses:
+        '200':
+          description: Tilgodehavende hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavendeV2'
+        '404':
+          description: Sagen eller tilgodehavendet findes ikke, eller brugeren har
+            ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/tilgodehavender/9b2d5f64-5717-4562-b3fc-2c963f66afb1
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: opdaterTilgodehavendeV2
+      summary: Opdater tilgodehavende.
+      description: Opdater et eksisterende tilgodehavende på tvangsopløsningssagen
+        som kreditor. Likvidatorer kan læse tilgodehavender, men kan ikke opdatere
+        dem via dette endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdateringV2'
+      responses:
+        '200':
+          description: Tilgodehavende redigeret succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavendeV2'
+        '404':
+          description: Sagen eller tilgodehavendet findes ikke, eller brugeren har
+            ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/tilgodehavender/9b2d5f64-5717-4562-b3fc-2c963f66afb1
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - insolvensDirigentEkstern
+      operationId: sletTilgodehavendeV2
+      summary: Slet tilgodehavende.
+      description: Slet et eksisterende tilgodehavende på tvangsopløsningssagen som
+        kreditor. Likvidatorer kan læse tilgodehavender, men kan ikke slette dem via
+        dette endpoint.
+      responses:
+        '200':
+          description: Tilgodehavende slettet succesfuldt.
+        '404':
+          description: Sagen eller tilgodehavendet findes ikke, eller brugeren har
+            ingen relation til sagen.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/apiError'
+              example:
+                code: 404
+                status: 404
+                message: Sagen findes ikke
+                path: /v2/tvangsoploesningssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed/tilgodehavender/9b2d5f64-5717-4562-b3fc-2c963f66afb1
+                timestamp: '2026-03-01T09:15:00.000+01:00'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '409':
+          $ref: '#/components/responses/conflict'
+        '500':
+          $ref: '#/components/responses/internalServerError'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+security:
+- bearerAuth: [
+    ]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Alle operationer kræver et gyldigt JWT bearer-token i `Authorization`-headeren.
+
+        **Token-typer.** Tokenet repræsenterer enten en person, en virksomhed, en adgangsprofildeltager eller en professionel bruger (MitID Erhverv, fx advokat, revisor, likvidator; bemærk at JWT-token-typen PROFESSIONEL angiver erhvervslogin og er adskilt fra sagsdeltagergruppen RETTENS_UDPEGEDE på sagen). Kun disse typer må kalde API'et.
+
+        **Fejl.** Mangler tokenet eller er det ugyldigt eller udløbet, svarer API'et 401. Har tokenet en anden type end de ovenstående, svarer API'et 403. 403 gives også når brugeren har en relation til sagen, men ikke må udføre handlingen. Hvis brugeren ingen relation har til sagen, svarer API'et 404.
+
+        **Hvem må hvad (V2).**
+
+        | Operationer | Hvem |
+        |---|---|
+        | Opret insolvenssag | Bruger med en token-type ovenfor; sagstype TVANGSOPLOESNING kan ikke oprettes (oprettes af Erhvervsstyrelsen) |
+        | Hent sag, sagens gang, retsbøger, meddelelser, dokumenter, emner til skriv til retten | Bruger med relation til sagen; indholdet afgrænses af brugerens rolle |
+        | Hent sagsdeltagere | Bruger med relation til sagen; kun de sagsdeltagere brugerens rolle giver adgang til |
+        | Opdater sagsdeltager | Kun den indloggede brugers egen sagsdeltager (inkl. rollen INDSENDER) |
+        | Skriv til retten | Bruger med relation til sagen; kun egne uploadede bilag på sagen |
+        | Hent og besvar frister | Kun modtagere af fristen (frister er tiltænkt bestemte roller) |
+        | Hent krav og tilgodehavender | Likvidator: alle; kreditor: kun egne; øvrige: ingen |
+        | Anmeld, opdater og slet krav og tilgodehavender | Kreditor (tilgodehavende kan registreres uden eksisterende relation) |
+        | Anmeld nulkrav | Gældsstyrelsen |
+
+        Et token udstedes af login-tjenesten og har begrænset levetid; et udløbet eller ugyldiggjort token giver 401, og klienten skal hente et nyt token.
+  parameters:
+    sagId:
+      name: sagId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+    fristId:
+      name: fristId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+    kravId:
+      name: kravId
+      in: path
+      required: true
+      description: Kravets tekniske ID. Returneres når krav oprettes eller hentes
+        (feltet kravId i V2).
+      schema:
+        $ref: '#/components/schemas/id'
+    tilgodehavendeId:
+      name: tilgodehavendeId
+      in: path
+      required: true
+      description: Tilgodehavendets tekniske ID. Returneres når tilgodehavender oprettes
+        eller hentes (feltet tilgodehavendeId i V2).
+      schema:
+        $ref: '#/components/schemas/id'
+    sagsdeltagerId:
+      name: sagsdeltagerId
+      in: path
+      required: true
+      description: Teknisk ID på sagsdeltageren. Returneres i listen af sagsdeltagere
+        på sagen, angivet som 'sagsdeltagerId'.
+      schema:
+        $ref: '#/components/schemas/id'
+    pageV2:
+      name: page
+      in: query
+      required: false
+      description: Sideindeks, 0-baseret (første side er 0). Ugyldig værdi (negativ
+        eller ikke et heltal) giver 400.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    sizeV2:
+      name: size
+      in: query
+      required: false
+      description: Antal elementer pr. side (1-100, default 20). Værdier uden for
+        intervallet giver 400.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+    directionV2:
+      name: direction
+      in: query
+      required: false
+      description: Sorteringsretning. Default er DESC (nyeste/største først). Gælder
+        alle felter i sort.
+      schema:
+        allOf:
+        - $ref: '#/components/schemas/directionEnum'
+        default: DESC
+    sortKravV2:
+      name: sort
+      in: query
+      required: false
+      description: 'Felter der sorteres på (gentag parameteren for flere felter).
+        Gyldige værdier: oprettelsestidspunkt (default), redigeringstidspunkt, beloeb,
+        gebyrOgRente, opgjortdato. Ukendt feltnavn giver 400.'
+      schema:
+        type: array
+        items:
+          type: string
+        default:
+        - oprettelsestidspunkt
+    sortTilgodehavenderV2:
+      name: sort
+      in: query
+      required: false
+      description: 'Felter der sorteres på (gentag parameteren for flere felter).
+        Gyldige værdier: oprettelsestidspunkt (default), redigeringstidspunkt, beloeb.
+        Ukendt feltnavn giver 400.'
+      schema:
+        type: array
+        items:
+          type: string
+        default:
+        - oprettelsestidspunkt
+    sortRetsboegerV2:
+      name: sort
+      in: query
+      required: false
+      description: 'Felter der sorteres på (gentag parameteren for flere felter).
+        Gyldige værdier: rettenSatTidspunkt (default), titel. Ukendt feltnavn giver
+        400.'
+      schema:
+        type: array
+        items:
+          type: string
+        default:
+        - rettenSatTidspunkt
+    page:
+      name: page
+      description: Side for paginering.
+      required: false
+      in: query
+      schema:
+        type: integer
+    size:
+      name: size
+      description: Antal elementer pr. side.
+      required: false
+      in: query
+      schema:
+        type: integer
+    sort:
+      name: sort
+      description: Liste af felter der skal sorteres på.
+      required: false
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+    direction:
+      name: direction
+      description: Stigende eller faldende retning for søgeresultater.
+      in: query
+      schema:
+        $ref: '#/components/schemas/directionEnum'
+  responses:
+    badRequest:
+      description: 'Ugyldigt kald: validering af request eller en forretningsregel
+        er brudt. apiError.status er 400, og apiError.errorDetails[].code indeholder
+        forretningskoden (fx aktion.ekstern.haandter.frist.ikke.modtager).'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+          example:
+            code: 400
+            status: 400
+            message: Ugyldigt kald
+            path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed
+            timestamp: '2026-03-01T09:15:00.000+01:00'
+            errorDetails:
+            - message: Besvarelsen skal indeholde fritekst eller mindst ét bilag
+              code: aktion.ekstern.haandter.frist.ugyldig.besvarelse
+    unauthorized:
+      description: Manglende eller ugyldigt bearer-token (JWT).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+    forbidden:
+      description: Tokenet har ikke en rolle der må kalde endpointet (PROFESSIONEL,
+        ADGANGSPROFILDELTAGER, PERSON eller VIRKSOMHED), eller brugeren har en relation
+        til sagen men må ikke udføre handlingen.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+          example:
+            code: 403
+            status: 403
+            message: Adgang nægtet
+            path: /v2/insolvenssagerEkstern/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed
+            timestamp: '2026-03-01T09:15:00.000+01:00'
+            errorDetails:
+            - message: Brugeren må ikke udføre handlingen
+              code: adgang.naegtet
+    conflict:
+      description: Handlingen er i konflikt med sagens eller objektets aktuelle tilstand,
+        fx allerede besvaret/behandlet.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+    internalServerError:
+      description: Uventet fejl i tjenesten.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  schemas:
+    tvangsoploesningssagEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Model af tvangsopløsningssagen for eksterne pånær likvidator. Tiltænkt
+        tidl. ledelsesmedlemmer og kreditor/debitor, hvor backend-service filtrerer
+        data på baggrund af brugerens relation til sagen.
+      required:
+      - sagsdetaljer
+      - virksomhed
+      - dokumenter
+      - roller
+      properties:
+        sagsdetaljer:
+          $ref: '#/components/schemas/sagsdetaljerEkstern'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        tidligereLedelse:
+          description: Tidligere ledelsesmedlemmer må ses af øvrige tidligere ledelsesmedlemmer
+            på sagen. For øvrige relationer til sagen vil attributen være null.
+          type: array
+          items:
+            $ref: '#/components/schemas/ledelsesmedlem'
+        likvidatorer:
+          description: Likvidatorer på sagen må ses af tidligere ledelsesmedlemmer
+            og kreditorer/debitorer. For øvrige relationer til sagen vil attributen
+            være null.
+          type: array
+          items:
+            $ref: '#/components/schemas/likvidatorEkstern'
+        frister:
+          description: Frister på sagen må ses af tidligere ledelsesmedlemmer på sagen
+            såfremt fristen er tiltænkt dem. For øvrige relationer til sagen vil attributen
+            være null.
+          type: array
+          items:
+            $ref: '#/components/schemas/fristEkstern'
+        dokumenter:
+          description: Sagsdokumenter på den specifikke sag.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentSamlingEkstern'
+        retsmoeder:
+          description: Liste af retsmøder, som ekstern bruger er indkaldt til.
+          type: array
+          items:
+            $ref: '#/components/schemas/retsmoede'
+        roller:
+          description: Liste af roller/relationer brugeren har til sagen.
+          type: array
+          items:
+            $ref: '#/components/schemas/eksternRolleEnum'
+    sagsdetaljerEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Informationer om insolvenssagen for eksterne pånær likvidator.
+        Tiltænkt tidl. ledelsesmedlemmer og kreditor/debitor, hvor backend-service
+        filtrerer data på baggrund af brugerens relation til sagen.
+      required:
+      - status
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        sagsnummer:
+          type: string
+        afgoerelsesdato:
+          type: string
+          format: date
+        modtagelsestidspunkt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/statusEnumEkstern'
+        tildelt:
+          type: string
+          format: uuid
+        aarsager:
+          type: array
+          items:
+            $ref: '#/components/schemas/aarsag'
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+    ledelsesmedlem:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Data for et tidligere ledelsesmedlem i en insolvens-sag.
+      required:
+      - part
+      - hemmeligAdresse
+      properties:
+        part:
+          $ref: '#/components/schemas/part'
+        relationInformation:
+          $ref: '#/components/schemas/ledelsesmedlemInformation'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        hemmeligAdresse:
+          type: boolean
+          description: Angiver om adressen er hemmelig, skal angives når seneste ledelse
+            er udenlandsk. Ellers altid false.
+    ledelsesmedlemInformation:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Information om det tidligere ledelsesmedlems relation til selskabet
+        under tvangsopløsning/konkurs.
+      properties:
+        tiltraadt:
+          type: string
+          format: date
+        fratraadt:
+          type: string
+          format: date
+        kontaktadresser:
+          type: array
+          items:
+            $ref: '#/components/schemas/fritekstadresse'
+    likvidatorEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      required:
+      - likvidatorId
+      properties:
+        likvidatorId:
+          description: Id på likvidator i likvidator registret.
+          type: string
+          format: uuid
+    fristEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Frist på sagen.
+      required:
+      - id
+      - titel
+      - fristtype
+      - frist
+      - erAktiv
+      properties:
+        id:
+          type: string
+          format: uuid
+        titel:
+          type: string
+        fristtype:
+          $ref: '#/components/schemas/fristtypeEnum'
+        frist:
+          type: string
+          format: date
+        erAktiv:
+          type: boolean
+          description: False såfremt aktiviteten der skulle udføres er blevet udført,
+            eller såfremt fristen er udløbet. Ellers true.
+    fristtypeEnum:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      description: Fristtypen anvendes af fronten til at afgøre hvilket flow der initieres
+        ved klik på fristen.
+      enum:
+      - ERKLAERING
+      - REDEGOERELSE
+      - BETAL_KAEREAFGIFT
+      - KAEREAFGOERELSE
+      - AFVISNING_TILBAGEKALDELSE_ERST
+      - AFVISNING_TILBAGEKALDELSE_ERST_RYKKER
+      - FRITEKST
+    dokumentSamlingEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: En samling af dokumenter der er tilføjet til sagen i samme aktion,
+        fx flere bilag indsendt i samme redegørelse.
+      required:
+      - samlingTitel
+      - dato
+      - opretter
+      - dokumenter
+      properties:
+        samlingTitel:
+          type: string
+        dato:
+          description: Dato hvor dokumentsamlingen blev tilføjet til sagen. Hvis flere
+            dokumenter siden tilføjes vil denne dato forblive uændret.
+          type: string
+          format: date
+        opretter:
+          $ref: '#/components/schemas/haendelsePartEkstern'
+        dokumenter:
+          type: array
+          items:
+            $ref: '#/components/schemas/tvangsoploesningDokument'
+    retsmoede:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Berammede retsmøder på sagen.
+      required:
+      - berammelseId
+      properties:
+        berammelseId:
+          type: string
+          format: uuid
+        oprettetAfBerammelseservice:
+          deprecated: true
+          type: boolean
+          description: Er retsmødet oprettet i den nye berammelsesservice (true) eller
+            oprettet i reservationsservice (false).
+    eksternRolleEnum:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      enum:
+      - TIDLIGERE_LEDELSE
+      - KREDITOR
+      - LIKVIDATOR
+    erklaering:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      required:
+      - erAktivt
+      - harAktiver
+      - gaeld
+      - selskabetsRegnskabsbilag
+      properties:
+        id:
+          readOnly: true
+          type: string
+          format: uuid
+        traeffesTidsrum:
+          $ref: '#/components/schemas/tidsinterval'
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        erAktivt:
+          type: boolean
+          description: Er selskabet aktivt i drift.
+        aktivitetOphoert:
+          $ref: '#/components/schemas/maanedAar'
+        harAktiver:
+          type: boolean
+          description: Har selskabet aktiver.
+        aktiverBeskrivelse:
+          type: string
+          description: Hvis selskabet har aktiver beskrives hvilket.
+          maxLength: 1024
+        gaeld:
+          type: boolean
+          description: Har selskabet gæld.
+        gaeldBeloeb:
+          type: number
+          description: Angiv beløb for gælds størrelse i DKK.
+        bank:
+          type: array
+          description: Angiv selskabets bank konti.
+          items:
+            $ref: '#/components/schemas/bank'
+        selskabetsRegnskabsbilag:
+          type: string
+          description: Angiver hos hvem selskabets regnskabsbilag kan forefindes.
+          maxLength: 1024
+        bemaerkninger:
+          type: string
+          description: Øvrige bemærkninger.
+          maxLength: 2048
+        oenskerSelskabGenoptaget:
+          type: boolean
+          description: Selskab ønskes genoptaget.
+        oenskerSelskabOploest:
+          type: boolean
+          description: Selskab ønskes opløst.
+    kontaktoplysninger:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Kontaktoplysninger (email adresse og/eller telefonnummer) for en
+        person eller virksomhed.
+      properties:
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+    dokumentReference:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Reference til dokument i dokumentlageret.
+      required:
+      - id
+      properties:
+        id:
+          description: Teknisk ID for dokumentet, nogle steder refereret til som dokument
+            referencen.
+          type: string
+          format: uuid
+    tvangsoploesningDokument:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Dokument relateret til insolvens.
+      required:
+      - reference
+      - type
+      properties:
+        reference:
+          $ref: '#/components/schemas/dokumentReference'
+        type:
+          $ref: '#/components/schemas/tvangsoploesningDokumentType'
+    tvangsoploesningDokumentType:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      enum:
+      - ANMODNING_OM_OPLOESNING
+      - ANMODNING_OM_FRISTUDSAETTELSE
+      - OPLOESNINGSTRUSSEL
+      - ERKLAERING
+      - RETSBOG
+      - INHABILITETSERKLAERING
+      - OEVRIGE
+      - VURDERINGDATA
+      example: ANMODNING_OM_OPLOESNING
+    haendelsePartEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Repræsenterer alle de typer af parter der kan logge ind og lave
+        ændringer i systemet. Hvis en intern har foretaget ændringer returneres retskredsens
+        embedskode.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/haendelsePartType'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        person:
+          $ref: '#/components/schemas/personReference'
+        fritekst:
+          $ref: '#/components/schemas/fritekstPart'
+        partner:
+          $ref: '#/components/schemas/partnerReference'
+        intern:
+          $ref: '#/components/schemas/embedskode'
+        system:
+          $ref: '#/components/schemas/systemPart'
+    haendelsePartType:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Type af historik-part. Inkluderer alle typer der kan logge ind
+        og lave ændringer i systemet.
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - FRITEKST
+      - PARTNER
+      - INTERN
+      - SYSTEM
+    retsbogEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Retsbog på sagen.
+      required:
+      - rettenSatTidspunkt
+      - titel
+      - embedskode
+      - reference
+      properties:
+        rettenSatTidspunkt:
+          description: Dato og tidspunkt hvor retten var sat.
+          type: string
+          format: date-time
+        titel:
+          type: string
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+        reference:
+          $ref: '#/components/schemas/dokumentReference'
+    detaljeretMeddelelse:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Meddelelse på sagen, dette værende et dokument der er sendt imellem
+        parter på sagen.
+      required:
+      - meddelelseId
+      - reference
+      - meddelelseTitel
+      - afsender
+      - afsendelsesdato
+      properties:
+        meddelelseId:
+          type: string
+          format: uuid
+        reference:
+          $ref: '#/components/schemas/dokumentReference'
+        meddelelseTitel:
+          type: string
+        afsender:
+          description: Navn på afsender, fx person navn eller navn på et embede.
+          type: string
+        afsendelsesdato:
+          type: string
+          format: date
+        modtagerNavn:
+          type: string
+        navneOgAdresseBeskyttet:
+          description: For danske personer angives om personen er navne- og adressebeskyttet.
+            Øvrige modtagere vil have angivet dette felt som false.
+          type: boolean
+    kravListItem:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Udsnit af indberettet krav.
+      required:
+      - id
+      - oprettelsesdato
+      - indberetter
+      - beloeb
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsesdato:
+          type: string
+          format: date
+        paragraf:
+          $ref: '#/components/schemas/paragrafEnum'
+        indberetter:
+          description: Den part der har anmeldt kravet.
+          $ref: '#/components/schemas/part'
+        kreditor:
+          $ref: '#/components/schemas/tredjepart'
+        endeligt:
+          description: Er kravet endeligt, eller forventes det fortsat at kunne ændre
+            sig.
+          type: boolean
+        sikkerhed:
+          $ref: '#/components/schemas/sikkerhed'
+        beloeb:
+          description: Kravets samlede størrelse bestående af både beløbet selv og
+            påløbne gebyrer og renter.
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        bemaerkninger:
+          type: string
+        harBilag:
+          type: boolean
+    tilgodehavendeListItem:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Udsnit af indberettet tilgodehavende.
+      required:
+      - id
+      - oprettelsesdato
+      - indberetter
+      - beloeb
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsesdato:
+          type: string
+          format: date
+        indberetter:
+          description: Den part der har registreret tilgodehavendet.
+          $ref: '#/components/schemas/part'
+        debitor:
+          $ref: '#/components/schemas/tredjepart'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+    tredjepart:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Tredjepart for krav (kreditor) og tilgodehavender (debitor) der
+        indberettes på vegne af.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/tredjepartTypeEnum'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        anden:
+          $ref: '#/components/schemas/fritekstPart'
+    tredjepartTypeEnum:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Type af tredjepart, virksomhed (CVR-nummer) eller anden (fritekst
+        part givet ved navn og adresse).
+      type: string
+      enum:
+      - VIRKSOMHED
+      - ANDEN
+    sikkerhed:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Sikkerhed for et krav (pant eller ejendomsforbehold).
+      required:
+      - sikkerhedsform
+      properties:
+        sikkerhedsform:
+          $ref: '#/components/schemas/sikkerhedsformEnum'
+        pantTekst:
+          maxLength: 500
+          type: string
+    sikkerhedsformEnum:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Type af sikkerhed for et krav.
+      type: string
+      enum:
+      - PANT
+      - EJENDOMSFORBEHOLD
+    paragrafEnum:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Hvilken paragraf i konkurslovens kapitel 10, som kravet hører til.
+      type: string
+      enum:
+      - PARAGRAF_93
+      - PARAGRAF_94
+      - PARAGRAF_95
+      - PARAGRAF_96
+      - PARAGRAF_97
+      - PARAGRAF_98
+    statusEnumEkstern:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      description: Status i sagens behandling som vist for eksterne.
+      type: string
+      enum:
+      - UNDER_BEHANDLING
+      - UDSAT_PAA_GENOPTAGELSE
+      - UDSAT_PAA_REKONSTRUKTION
+      - HOS_LIKVIDATOR
+      - HENVIST_TIL_ANDEN_RET
+      - ANNULLERET
+      - TILBAGEKALDT
+      - ANALOGI_AF_143
+      - FUSIONERET
+      - SOLVENT_LIKVIDATION
+      - KONKURSDEKRET_AFSAGT
+      - HOS_SKIFTERETTEN
+      - GENOPTAGELSE_AFVIST
+      - GENOPTAGET
+      - FEJLOPRETTET
+    tvangsoploesningAarsag:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      enum:
+      - MANGLENDE_REGNSKAB
+      - OEVRIGE
+    aarsag:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: object
+      required:
+      - type
+      - tekst
+      properties:
+        type:
+          $ref: '#/components/schemas/tvangsoploesningAarsag'
+        tekst:
+          type: string
+    bank:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      required:
+      - kontonummer
+      - regnr
+      properties:
+        bankNavn:
+          readOnly: true
+          type: string
+          description: Bank (fritekst navn).
+          minLength: 2
+          maxLength: 64
+          example: Sparekassen Sjælland
+        regnr:
+          type: string
+          pattern: ^\d{4}$
+          maxLength: 4
+          minLength: 4
+          description: Bank reg. nr.
+          example: 6075
+        kontonummer:
+          type: string
+          pattern: ^\d{2,10}$
+          maxLength: 10
+          example: 1234567890
+          description: Kontonummer.
+    maanedAar:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      pattern: ^(\d{2})-(\d{4})$
+      description: Måned og år for ophørt aktivitet.
+      example: 01-2023
+    tidsinterval:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common.insolvens
+      type: string
+      pattern: ^(\d{1,4})-(\d{1,4})$
+      example: 8-1030
+    sagensGangBegivenhed:
+      deprecated: true
+      required:
+      - oprettet
+      - foretagetAf
+      - beskrivelse
+      properties:
+        oprettet:
+          description: Tidspunkt hvor hændelsen fandt sted.
+          type: string
+          format: date-time
+        foretagetAf:
+          $ref: '#/components/schemas/haendelsePartEkstern'
+        beskrivelse:
+          description: En kort beskrivelse af hvilken hændelse der er tale om - ala
+            en titel.
+          example: Anmodning om vidneafhøring
+          type: string
+    kontaktoplysningerOpdatering:
+      deprecated: true
+      description: Oprettelse eller opdatering af kontaktoplysninger for direktøren
+        selv.
+      properties:
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+    opretKaeremaal:
+      deprecated: true
+      description: Data til oprettelse af et nyt kæremål.
+      required:
+      - afgoerelseId
+      properties:
+        afgoerelseId:
+          description: Id på den afgørelse (retsbog) som der ønskes kæret.
+          type: string
+          format: uuid
+        paastand:
+          description: Fritekstangivelse af hvad og hvorfor man ønsker at kære.
+          type: string
+          maxLength: 1200
+        begrundelse:
+          description: Fritekstangivelse for hvorfor skifterettens afgørelse skal
+            ændres.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Bilag der underbygger den kærendes påstand. Hvis ingen bilag
+            sendes tom liste, ikke null.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReference'
+    afgoerelse:
+      deprecated: true
+      description: Data om hver afgørelse der er truffet i sagen.
+      required:
+      - afgoerelseId
+      - afgoerelseTitel
+      properties:
+        afgoerelseId:
+          description: Id på den afgørelse (retsbog) som der ønskes kæret.
+          type: string
+          format: uuid
+        afgoerelseTitel:
+          description: Titlen på afgørelsen, der er sigende for den afgørelse der
+            er truffet.
+          type: string
+          maxLength: 200
+    kravListe:
+      deprecated: true
+      description: En pagineret liste af krav sammen med en total sum af alle krav
+        som brugeren må se (på tværs af paginerede sider).
+      required:
+      - krav
+      - totalSum
+      properties:
+        krav:
+          description: En (pagineret) side af krav for brugeren.
+          type: array
+          items:
+            $ref: '#/components/schemas/kravListItem'
+        totalSum:
+          description: Samlet sum af alle krav for brugeren på tværs af paginerede
+            sider.
+          type: number
+    tilgodehavendeListe:
+      deprecated: true
+      description: En pagineret liste af tilgodehavender sammen med en total sum af
+        alle tilgodehavender som brugeren må se (på tværs af paginerede sider).
+      required:
+      - tilgodehavender
+      - totalSum
+      properties:
+        tilgodehavender:
+          description: En (pagineret) side af tilgodehavender for brugeren.
+          type: array
+          items:
+            $ref: '#/components/schemas/tilgodehavendeListItem'
+        totalSum:
+          description: Samlet sum af alle tilgodehavender for brugeren på tværs af
+            paginerede sider.
+          type: number
+    besvarelseRequest:
+      deprecated: true
+      description: Besvarelse med fritekst og bilag. Hvis ingen bilag vedlægges bliver
+        fritekst krævet.
+      properties:
+        fritekst:
+          type: string
+          minLength: 3
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som ekstern bruger ønsker at
+            uploade til at understøtte sin besvarelse. Hvert bilag uploades først
+            til dokumentlageret, og det returnerede tekniske ID/reference for dokumentet
+            anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReference'
+    dokumentReferenceV2:
+      description: Reference til dokument i dokumentlageret. Bilag uploades først
+        via dokumentlagerets eget API (se info.description, afsnittet Bilag og dokumenter),
+        og det returnerede id angives her. Størrelses- og filtypekrav samt adgangsregler
+        for upload og download afgøres af dokumentlageret og er ikke specificeret
+        i denne OAS. Ved download giver dokumentlageret 403 hvis brugeren ikke har
+        adgang til dokumentet og 404 hvis det ikke findes.
+      required:
+      - id
+      properties:
+        id:
+          description: Teknisk ID for dokumentet, nogle steder refereret til som dokument
+            referencen.
+          type: string
+          format: uuid
+    insolvensDokumentTypeV2:
+      description: |
+        Dokumenttype for et dokument på sagen.
+
+        | Værdi | Forklaring |
+        |---|---|
+        | ANMODNING_OM_OPLOESNING | Anmodning om opløsning af selskab |
+        | ANMODNING_OM_FRISTUDSAETTELSE | Anmodning om udsættelse af en frist |
+        | OPLOESNINGSTRUSSEL | Opløsningstrussel |
+        | ERKLAERING | Erklæring fra tidligere ledelse |
+        | RETSBOG | Retsbog |
+        | INHABILITETSERKLAERING | Inhabilitetserklæring |
+        | OEVRIGE | Øvrige dokumenter, fx fritekstsvar og bilag uden en mere specifik type |
+        | VURDERINGDATA | Vurderingsdata |
+        | ANMODNING_OM_KONKURSBEGAERING | Anmodning om konkursbegæring |
+        | ANMODNING_OM_GAELDSSANERING | Anmodning om gældssanering |
+        | ANMODNING_OM_REKONSTRUKTION | Anmodning om rekonstruktion |
+        | ANMODNING_OM_FOREBYGGENDE_REKONSTRUKTION | Anmodning om forebyggende rekonstruktion |
+        | ANMODNING_OM_AEGTEFAELLESKIFTE | Anmodning om ægtefælleskifte |
+        | ANMODNING_OM_ANDRE_SAGER_EFTER_SELSKABSLOVEN | Anmodning om andre sager efter selskabsloven |
+      type: string
+      enum:
+      - ANMODNING_OM_OPLOESNING
+      - ANMODNING_OM_FRISTUDSAETTELSE
+      - OPLOESNINGSTRUSSEL
+      - ERKLAERING
+      - RETSBOG
+      - INHABILITETSERKLAERING
+      - OEVRIGE
+      - VURDERINGDATA
+      - ANMODNING_OM_KONKURSBEGAERING
+      - ANMODNING_OM_GAELDSSANERING
+      - ANMODNING_OM_REKONSTRUKTION
+      - ANMODNING_OM_FOREBYGGENDE_REKONSTRUKTION
+      - ANMODNING_OM_AEGTEFAELLESKIFTE
+      - ANMODNING_OM_ANDRE_SAGER_EFTER_SELSKABSLOVEN
+      example: ANMODNING_OM_OPLOESNING
+    haendelsePartTypeV2:
+      description: Type af historik-part. Inkluderer alle typer der kan logge ind
+        og lave ændringer i systemet.
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - FRITEKST
+      - PARTNER
+      - INTERN
+      - SYSTEM
+    paragrafEnumV2:
+      description: |
+        Hvilken paragraf i konkurslovens kapitel 10, som kravet hører til.
+
+        | Værdi | Forklaring |
+        |---|---|
+        | PARAGRAF_93 | Konkurslovens § 93 |
+        | PARAGRAF_94 | Konkurslovens § 94 |
+        | PARAGRAF_95 | Konkurslovens § 95 |
+        | PARAGRAF_96 | Konkurslovens § 96 |
+        | PARAGRAF_97 | Konkurslovens § 97 |
+        | PARAGRAF_98 | Konkurslovens § 98 |
+      type: string
+      enum:
+      - PARAGRAF_93
+      - PARAGRAF_94
+      - PARAGRAF_95
+      - PARAGRAF_96
+      - PARAGRAF_97
+      - PARAGRAF_98
+    sikkerhedsformEnumV2:
+      description: Type af sikkerhed for et krav.
+      type: string
+      enum:
+      - PANT
+      - EJENDOMSFORBEHOLD
+    tredjepartTypeEnumV2:
+      description: Type af tredjepart, virksomhed (CVR-nummer) eller anden (fritekst
+        part givet ved navn og adresse).
+      type: string
+      enum:
+      - VIRKSOMHED
+      - ANDEN
+    opretInsolvenssagEksternV2:
+      description: Data til oprettelse af en ny insolvenssag som ekstern bruger.
+      required:
+      - sagstype
+      - retskreds
+      properties:
+        sagstype:
+          $ref: '#/components/schemas/opretInsolvenssagTypeEksternV2'
+        retskreds:
+          description: Embedskode (3 bogstaver) for den retskreds sagen oprettes i,
+            fx 'KBH'.
+          allOf:
+          - $ref: '#/components/schemas/embedskode'
+        dokumenter:
+          description: Liste af dokumenter der skal vedhæftes sagen ved oprettelse.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/insolvensDokumentV2'
+        bemaerkning:
+          description: Eventuel bemærkning til sagen ved oprettelse.
+          type: string
+          minLength: 1
+          maxLength: 2000
+    oprettetInsolvenssagEksternV2:
+      description: Bekræftelse af en oprettet insolvenssag.
+      required:
+      - sagId
+      - sagsnummer
+      properties:
+        sagId:
+          description: Teknisk ID for den oprettede insolvenssag.
+          type: string
+          format: uuid
+        sagsnummer:
+          description: Sagens brugervendte sagsnummer ved retten.
+          type: string
+    opretInsolvenssagTypeEksternV2:
+      description: Hvilken type sag der kan oprettes via POST /v2/insolvenssagerEkstern.
+        Adskiller sig bevidst fra insolvenssagTypeEksternV2 (sagens type når den hentes),
+        da en konkurssag oprettes som KONKURSBEGAERING og da TVANGSOPLOESNING ikke
+        kan oprettes af eksterne.
+      type: string
+      enum:
+      - KONKURSBEGAERING
+      - GAELDSSANERING
+      - REKONSTRUKTION
+      - FOREBYGGENDE_REKONSTRUKTION
+      - AEGTEFAELLESKIFTE
+      - ANDRE_SAGER_EFTER_SELSKABSLOVEN
+    sagensGangBegivenhedV2:
+      description: En hændelse der er sket på en specifik insolvenssag. Tilsammen
+        beskriver de sagens gang / historik, uanset sagstype.
+      required:
+      - oprettet
+      - foretagetAf
+      - beskrivelse
+      properties:
+        oprettet:
+          description: Tidspunkt hvor hændelsen fandt sted (date-time med tidszoneoffset,
+            se Dato og tid i info.description).
+          type: string
+          format: date-time
+        foretagetAf:
+          $ref: '#/components/schemas/haendelsePartEksternV2'
+        beskrivelse:
+          description: En kort beskrivelse af hvilken hændelse der er tale om - ala
+            en titel.
+          example: Anmodning om vidneafhøring
+          type: string
+    retsbogEksternV2:
+      description: Retsbog på sagen.
+      required:
+      - rettenSatTidspunkt
+      - titel
+      - embedskode
+      - reference
+      properties:
+        rettenSatTidspunkt:
+          description: Dato og tidspunkt hvor retten var sat (date-time med tidszoneoffset,
+            se Dato og tid i info.description).
+          type: string
+          format: date-time
+        titel:
+          description: Retsbogens titel.
+          type: string
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+        reference:
+          $ref: '#/components/schemas/dokumentReferenceV2'
+    meddelelseV2:
+      description: Meddelelse på sagen, dvs. et dokument der er sendt mellem parter
+        på sagen. meddelelseTitel angiver dokumentets titel.
+      required:
+      - meddelelseId
+      - reference
+      - meddelelseTitel
+      - afsender
+      - afsendelsesdato
+      properties:
+        meddelelseId:
+          description: Teknisk ID for meddelelsen.
+          type: string
+          format: uuid
+        reference:
+          $ref: '#/components/schemas/dokumentReferenceV2'
+        meddelelseTitel:
+          description: Meddelelsens titel.
+          type: string
+        afsender:
+          description: Navn på afsender, fx person navn eller navn på et embede.
+          type: string
+        afsendelsesdato:
+          description: Dato hvor meddelelsen blev afsendt.
+          type: string
+          format: date
+        modtagerNavn:
+          description: Navn på modtageren af meddelelsen.
+          type: string
+        navneOgAdresseBeskyttet:
+          description: For danske personer angives om personen er navne- og adressebeskyttet.
+            Øvrige modtagere vil have angivet dette felt som false.
+          type: boolean
+    besvarelseRequestV2:
+      description: Besvarelse med fritekst og bilag. Hvis ingen bilag vedlægges bliver
+        fritekst krævet.
+      properties:
+        fritekst:
+          description: Fritekstsvar på fristen.
+          type: string
+          minLength: 3
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som ekstern bruger ønsker at
+            uploade til at understøtte sin besvarelse. Hvert bilag uploades først
+            til dokumentlageret, og det returnerede tekniske ID/reference for dokumentet
+            anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+    fristEksternV2:
+      description: Frist på sagen, tiltænkt den indloggede brugers rolle.
+      required:
+      - fristId
+      - titel
+      - fristtype
+      - fristdato
+      - erAktiv
+      properties:
+        fristId:
+          $ref: '#/components/schemas/id'
+        titel:
+          description: Fristens brugervendte titel.
+          type: string
+        fristtype:
+          $ref: '#/components/schemas/fristtypeEnumV2'
+        fristdato:
+          description: Dato for fristens udløb.
+          type: string
+          format: date
+        erAktiv:
+          description: False såfremt aktiviteten der skulle udføres er blevet udført,
+            eller såfremt fristen er udløbet. Ellers true.
+          type: boolean
+    fristtypeEnumV2:
+      description: |
+        Fristtypen anvendes af en ekstern klient til at afgøre hvilket flow der initieres ved klik på fristen.
+        Kun typer der kan vises for eksterne brugere indgår. Frister der bruges i Erhvervsstyrelsens interne afvisnings-/tilbagekaldelsesforløb vises aldrig eksternt og er derfor ikke en del af V2.
+
+        | Værdi | Besvarbar via POST .../frister/{fristId} | Forklaring |
+        |---|---|---|
+        | ERKLAERING | ja | Tidligere ledelse skal afgive erklæring; besvares med fritekst og/eller bilag |
+        | REDEGOERELSE | ja | Likvidator skal indsende redegørelse (omfatter også rykker og påmindelse); besvares med fritekst og/eller bilag |
+        | FRITEKST | ja | Frist med fri, ekstern titel; besvares med fritekst og/eller bilag |
+        | BETAL_KAEREAFGIFT | nej | Frist til betaling af kæreafgift; betalingen sker uden for API'et, og fristen afsluttes af retten |
+        | KAEREAFGOERELSE | nej | Kæremål er indgivet og afventer afgørelse; der kan ikke svares på fristen via API'et |
+      type: string
+      enum:
+      - ERKLAERING
+      - REDEGOERELSE
+      - BETAL_KAEREAFGIFT
+      - KAEREAFGOERELSE
+      - FRITEKST
+    dokumentSamlingEksternV2:
+      description: En samling af dokumenter der er tilføjet til sagen i samme aktion,
+        fx flere bilag indsendt i samme meddelelse.
+      required:
+      - samlingTitel
+      - dato
+      - opretter
+      - dokumenter
+      properties:
+        samlingTitel:
+          description: Dokumentsamlingens titel.
+          type: string
+        dato:
+          description: Dato hvor dokumentsamlingen blev tilføjet til sagen. Hvis flere
+            dokumenter siden tilføjes vil denne dato forblive uændret.
+          type: string
+          format: date
+        opretter:
+          $ref: '#/components/schemas/haendelsePartEksternV2'
+        dokumenter:
+          description: Dokumenter der indgår i dokumentsamlingen.
+          type: array
+          items:
+            $ref: '#/components/schemas/insolvensDokumentV2'
+    kravV2:
+      description: Indberettet krav.
+      example:
+        kravId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        oprettelsestidspunkt: '2026-03-01T09:15:00+01:00'
+        redigeringstidspunkt: '2026-03-01T09:15:00+01:00'
+        indberetter:
+          type: VIRKSOMHED
+          virksomhed:
+            cvrNummer: '12345678'
+        beloeb: 15000.5
+        gebyrOgRente: 250.0
+        paragraf: PARAGRAF_96
+        endeligt: false
+        opgjortdato: '2026-02-28'
+        bemaerkninger: Faktura 2024-117 for leverede varer.
+        bilag:
+        - id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        reference: FAKTURA-2024-117
+      required:
+      - kravId
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - beloeb
+      - bilag
+      - opgjortdato
+      properties:
+        kravId:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          description: Den part der har anmeldt kravet.
+          $ref: '#/components/schemas/part'
+        tredjepart:
+          $ref: '#/components/schemas/tredjepartV2'
+        beloeb:
+          description: Kravets størrelse uden gebyr og renter.
+          $ref: '#/components/schemas/positivtDecimaltal'
+        gebyrOgRente:
+          description: Påløbne gebyrer og renter på kravet.
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        paragraf:
+          $ref: '#/components/schemas/paragrafEnumV2'
+        endeligt:
+          description: Er kravet endeligt, eller forventes det fortsat at kunne ændre
+            sig.
+          type: boolean
+        opgjortdato:
+          description: Dato hvor kravets beløb, gebyrer og renter er opgjort. Kan
+            ikke være en fremtidig dato.
+          type: string
+          format: date
+        bemaerkninger:
+          description: Eventuelle bemærkninger til kravet.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som kreditor ønsker at uploade
+            til at understøtte sit krav. Hvert bilag uploades først til dokumentlageret,
+            og det returnerede tekniske ID/reference for dokumentet anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+        reference:
+          description: Fritekstfelt, hvor kreditor kan indsætte en reference til sit
+            eget system for at identificere kravet.
+          type: string
+          maxLength: 200
+        sikkerhed:
+          $ref: '#/components/schemas/sikkerhedV2'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysningerV2'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresseV2'
+    kravOpdateringV2:
+      description: Oprettelse eller opdatering af krav. Bruges af både POST og PUT.
+        PUT er fuld erstatning - alle felter erstattes af de sendte værdier, og udeladte
+        valgfrie felter fjernes (bilag nulstilles til tom liste). Alle beløb er i
+        DKK med højst 2 decimaler. beloeb skal være mindst 0,01, mens gebyrOgRente
+        kan være 0.
+      required:
+      - beloeb
+      - opgjortdato
+      properties:
+        tredjepart:
+          $ref: '#/components/schemas/tredjepartV2'
+        beloeb:
+          description: Kravets størrelse uden gebyr og renter.
+          $ref: '#/components/schemas/positivtDecimaltal'
+        gebyrOgRente:
+          description: Påløbne gebyrer og renter på kravet.
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        paragraf:
+          $ref: '#/components/schemas/paragrafEnumV2'
+        endeligt:
+          description: Er kravet endeligt, eller forventes det fortsat at kunne ændre
+            sig.
+          type: boolean
+        opgjortdato:
+          description: Dato hvor kravets beløb, gebyrer og renter er opgjort. Kan
+            ikke være en fremtidig dato.
+          type: string
+          format: date
+        bemaerkninger:
+          description: Eventuelle bemærkninger til kravet.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Liste af bilag (valgfri, default tom liste) som kreditor ønsker
+            at uploade til at understøtte sit krav. Hvert bilag uploades først til
+            dokumentlageret, og det returnerede tekniske ID/reference for dokumentet
+            anvendes her.
+          type: array
+          default: [
+            ]
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+        reference:
+          description: Fritekstfelt, hvor kreditor kan indsætte en reference til sit
+            eget system for at identificere kravet.
+          type: string
+          maxLength: 200
+        sikkerhed:
+          $ref: '#/components/schemas/sikkerhedV2'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysningerV2'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresseV2'
+    tilgodehavendeV2:
+      description: Indberettet tilgodehavende.
+      example:
+        tilgodehavendeId: 9b2d5f64-5717-4562-b3fc-2c963f66afb1
+        oprettelsestidspunkt: '2026-03-02T10:00:00+01:00'
+        redigeringstidspunkt: '2026-03-02T10:00:00+01:00'
+        indberetter:
+          type: VIRKSOMHED
+          virksomhed:
+            cvrNummer: '87654321'
+        beloeb: 4200.0
+        bemaerkninger: Tilgodehavende for betalt forudbetaling.
+        bilag: [
+          ]
+        reference: KUNDE-4711
+      required:
+      - tilgodehavendeId
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - beloeb
+      properties:
+        tilgodehavendeId:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          description: Den part der har registreret tilgodehavendet.
+          $ref: '#/components/schemas/part'
+        tredjepart:
+          $ref: '#/components/schemas/tredjepartV2'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        bemaerkninger:
+          description: Eventuelle bemærkninger til tilgodehavendet.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som indberetteren ønsker at
+            uploade til at understøtte tilgodehavendet. Hvert bilag uploades først
+            til dokumentlageret, og det returnerede tekniske ID/reference for dokumentet
+            anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+        reference:
+          description: Fritekstfelt, hvor indberetteren kan indsætte en reference
+            til sit eget system for at identificere tilgodehavendet.
+          type: string
+          maxLength: 200
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysningerV2'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresseV2'
+    tilgodehavendeOpdateringV2:
+      description: Oprettelse eller opdatering af tilgodehavende. Bruges af både POST
+        og PUT. PUT er fuld erstatning - alle felter erstattes af de sendte værdier,
+        og udeladte valgfrie felter fjernes (bilag nulstilles til tom liste). Beløb
+        er i DKK med højst 2 decimaler og skal være mindst 0,01.
+      required:
+      - beloeb
+      properties:
+        tredjepart:
+          $ref: '#/components/schemas/tredjepartV2'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        bemaerkninger:
+          description: Eventuelle bemærkninger til tilgodehavendet.
+          type: string
+          maxLength: 1200
+        reference:
+          description: Fritekstfelt, hvor indberetteren kan indsætte en reference
+            til sit eget system for at identificere tilgodehavendet.
+          type: string
+          maxLength: 200
+        bilag:
+          description: Liste af bilag (valgfri, default tom liste) som indberetteren
+            ønsker at uploade til at understøtte tilgodehavendet. Hvert bilag uploades
+            først til dokumentlageret, og det returnerede tekniske ID/reference for
+            dokumentet anvendes her.
+          type: array
+          default: [
+            ]
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysningerV2'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresseV2'
+    nulkravOpdateringKreditorV2:
+      description: Anmeldelse af nulkrav fra Gældsstyrelsen.
+      required:
+      - krav
+      properties:
+        krav:
+          $ref: '#/components/schemas/nulkravOpdateringV2'
+    insolvenssagEksternV2:
+      description: Insolvenssag som den fremstår for en ekstern bruger, uanset hvilken
+        af de 7 sagstyper der er tale om. Kun oplysninger der er trygge at eksponere
+        til en tredjeparts-API-bruger er medtaget. Felter der kan være skjult for
+        den enkelte bruger (embedskode, modtagelsestidspunkt) er ikke required; skjult
+        betyder at feltet udelades eller er null.
+      example:
+        sagId: 1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed
+        sagsnummer: BS-1234/2026
+        embedskode: KBH
+        modtagelsestidspunkt: '2026-03-01T08:30:00+01:00'
+        status: UNDER_BEHANDLING
+        sagType: KONKURS
+        roller:
+        - KREDITOR
+        detaljer:
+          detaljerType: KONKURS
+          dekretdato: '2026-03-05'
+      required:
+      - sagId
+      - sagsnummer
+      - status
+      - sagType
+      - roller
+      - detaljer
+      properties:
+        sagId:
+          $ref: '#/components/schemas/id'
+        sagsnummer:
+          description: Sagens brugervendte sagsnummer ved retten.
+          type: string
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+          description: Embedskode for det embede sagen hører til. Udelades hvis brugeren
+            ikke må se oplysningen.
+        modtagelsestidspunkt:
+          description: Tidspunkt hvor sagen blev modtaget (date-time med tidszoneoffset,
+            se Dato og tid i info.description). Er ikke required, da oplysningen skjules
+            for brugere uden rolle på sagen. Skjult betyder at feltet udelades eller
+            er null.
+          type: string
+          format: date-time
+        afslutningsdato:
+          description: Dato hvor sagen blev afsluttet (kun udfyldt når sagen er afsluttet).
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/statusEnumEksternV2'
+        sagType:
+          $ref: '#/components/schemas/insolvenssagTypeEksternV2'
+        roller:
+          description: Liste af roller/relationer den indloggede bruger selv har til
+            sagen.
+          type: array
+          items:
+            $ref: '#/components/schemas/sagsdeltagerRolleEnumEksternV2'
+        detaljer:
+          $ref: '#/components/schemas/insolvenssagDetaljerEksternV2'
+    insolvenssagDetaljerEksternV2:
+      description: Sagstype-specifikke detaljer. Præcis én variant returneres, og
+        discriminatoren detaljerType (samme værdi som sagens sagType) afgør hvilken.
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/tvangsoploesningInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/konkursInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/gaeldssaneringInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/rekonstruktionInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/forebyggendeRekonstruktionInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/aegtefaelleskifteInsolvenssagDetaljerEksternV2'
+      - $ref: '#/components/schemas/andreSagerEfterSelskabslovenInsolvenssagDetaljerEksternV2'
+      discriminator:
+        propertyName: detaljerType
+        mapping:
+          TVANGSOPLOESNING: '#/components/schemas/tvangsoploesningInsolvenssagDetaljerEksternV2'
+          KONKURS: '#/components/schemas/konkursInsolvenssagDetaljerEksternV2'
+          GAELDSSANERING: '#/components/schemas/gaeldssaneringInsolvenssagDetaljerEksternV2'
+          REKONSTRUKTION: '#/components/schemas/rekonstruktionInsolvenssagDetaljerEksternV2'
+          FOREBYGGENDE_REKONSTRUKTION: '#/components/schemas/forebyggendeRekonstruktionInsolvenssagDetaljerEksternV2'
+          AEGTEFAELLESKIFTE: '#/components/schemas/aegtefaelleskifteInsolvenssagDetaljerEksternV2'
+          ANDRE_SAGER_EFTER_SELSKABSLOVEN: '#/components/schemas/andreSagerEfterSelskabslovenInsolvenssagDetaljerEksternV2'
+    tvangsoploesningInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for tvangsopløsningssager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid TVANGSOPLOESNING for denne variant (discriminator).
+          type: string
+          pattern: ^TVANGSOPLOESNING$
+        afgoerelsesdato:
+          description: Dato hvor afgørelsen om at tvangsopløse selskabet blev truffet
+            af Erhvervsstyrelsen.
+          type: string
+          format: date
+    konkursInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for konkurssager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid KONKURS for denne variant (discriminator).
+          type: string
+          pattern: ^KONKURS$
+        dekretdato:
+          description: Dato hvor konkursdekretet blev afsagt.
+          type: string
+          format: date
+    gaeldssaneringInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for gældssaneringssager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid GAELDSSANERING for denne variant (discriminator).
+          type: string
+          pattern: ^GAELDSSANERING$
+        indledningsdato:
+          description: Dato hvor gældssaneringssagen blev indledt.
+          type: string
+          format: date
+    rekonstruktionInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for rekonstruktionssager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid REKONSTRUKTION for denne variant (discriminator).
+          type: string
+          pattern: ^REKONSTRUKTION$
+        indledningsdato:
+          description: Dato hvor rekonstruktionsbehandlingen blev indledt.
+          type: string
+          format: date
+    forebyggendeRekonstruktionInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for forebyggende rekonstruktionssager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid FOREBYGGENDE_REKONSTRUKTION for denne variant (discriminator).
+          type: string
+          pattern: ^FOREBYGGENDE_REKONSTRUKTION$
+        indledningsdato:
+          description: Dato hvor den forebyggende rekonstruktionsbehandling blev indledt.
+          type: string
+          format: date
+    aegtefaelleskifteInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for ægtefælleskiftesager.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid AEGTEFAELLESKIFTE for denne variant (discriminator).
+          type: string
+          pattern: ^AEGTEFAELLESKIFTE$
+        udleveringsdato:
+          description: Dato hvor boet blev udleveret til skifte.
+          type: string
+          format: date
+    andreSagerEfterSelskabslovenInsolvenssagDetaljerEksternV2:
+      type: object
+      description: Detaljer specifikke for andre sager efter selskabsloven.
+      required:
+      - detaljerType
+      properties:
+        detaljerType:
+          description: Altid ANDRE_SAGER_EFTER_SELSKABSLOVEN for denne variant (discriminator).
+          type: string
+          pattern: ^ANDRE_SAGER_EFTER_SELSKABSLOVEN$
+        afgoerelsesdato:
+          description: Dato hvor afgørelsen i sagen blev truffet.
+          type: string
+          format: date
+    statusEnumEksternV2:
+      description: |
+        Status i sagens behandling som vist for eksterne. Omfatter 4 åbne sagsstatusser og 49 afslutningsformer (når en sag afsluttes, vises afslutningsformen som sagens status).
+
+        | Værdi | Dansk visningstekst | Kategori |
+        |---|---|---|
+        | NY_SAG | Ny sag | Åben |
+        | UNDER_BEHANDLING | Under behandling | Åben |
+        | UDLEVERET | Udleveret | Åben |
+        | GENOPTAGET | Genoptaget | Åben |
+        | FEJLOPRETTET | Fejloprettet | Afsluttet (fælles) |
+        | HENVIST | Henvist | Afsluttet (fælles) |
+        | TILBAGEKALDT | Tilbagekaldt | Afsluttet (fælles) |
+        | ANALOGI_AF_PARAGRAF_143 | Analogi af § 143 | Afsluttet (tvangsopløsning) |
+        | ANNULLERET | Annulleret | Afsluttet (tvangsopløsning) |
+        | FUSION | Fusion | Afsluttet (tvangsopløsning) |
+        | SOLVENT_LIKVIDATION | Solvent likvidation (Sluttet solvent) | Afsluttet (tvangsopløsning) |
+        | SPALTNING | Spaltning | Afsluttet (tvangsopløsning) |
+        | KONKURSDEKRET_AFSAGT | Konkursdekret afsagt | Afsluttet (tvangsopløsning / rekonstruktion) |
+        | BORTFALDET | Bortfaldet | Afsluttet (konkurs / gældssanering / rekonstruktion / ægtefælleskifte / selskabsloven) |
+        | AFVIST | Afvist | Afsluttet (konkurs / gældssanering / rekonstruktion / ægtefælleskifte / selskabsloven) |
+        | BEGAERING_IKKE_IMOEDEKOMMET | Begæring ikke imødekommet | Afsluttet (konkurs / rekonstruktion / forebyggende rekonstruktion) |
+        | SLUTTET_EFTER_PARAGRAF_143 | Sluttet efter § 143 | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_144_UDLEVERET_TIL_SKYLDNER | Sluttet efter § 144 - udleveret til skyldner | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_144_UDLEVERET_TIL_KAPITALEJER | Sluttet efter § 144 - udleveret til kapitalejer | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_144_TVANG_GENOPTAGET | Sluttet efter § 144 - tvang genoptaget | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_148 | Sluttet efter § 148 | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_149 | Sluttet efter § 149 | Afsluttet (konkurs) |
+        | SLUTTET_EFTER_PARAGRAF_149_ENDELIG | Sluttet efter § 149 - endelig | Afsluttet (konkurs) |
+        | TILBAGEKALDT_EFTER_DEKRET_PARAGRAF_21_STK_3 | Tilbagekaldt efter dekret § 21, stk. 3 | Afsluttet (konkurs) |
+        | TILBAGEKALDT_EFTER_DEKRET_PARAGRAF_21_STK_3_TVANG_GENOPTAGET | Tilbagekaldt efter dekret § 21, stk. 3 - tvang genoptaget | Afsluttet (konkurs) |
+        | SLUTTET_MED_DEKRET_I_ANDEN_SAG | Sluttet med dekret i anden sag | Afsluttet (konkurs) |
+        | SLUTTET_MED_REKONSTRUKTION | Sluttet med rekonstruktion | Afsluttet (konkurs) |
+        | TILBAGEKALDT_FOER_DEKRET | Tilbagekaldt før dekret | Afsluttet (konkurs) |
+        | BEGAERING_IMOEDEKOMMET | Begæring imødekommet | Afsluttet (konkurs) |
+        | REASSUMPTION_AFSLUTTET | Reassumption afsluttet | Afsluttet (konkurs) |
+        | FOREBYGGENDE_REKONSTRUKTIONSBEHANDLING_OPHOERT | Forebyggende rekonstruktionsbehandling ophørt | Afsluttet (forebyggende rekonstruktion) |
+        | OPHAEVELSE_AF_REKONSTRUKTION | Ophævelse af rekonstruktion | Afsluttet (rekonstruktion) |
+        | REKONSTRUKTIONSBEHANDLING_OPHOERT | Rekonstruktionsbehandling ophørt | Afsluttet (rekonstruktion) |
+        | REKONSTRUKTIONSFORSLAG_STADFAESTET | Rekonstruktionsforslag stadfæstet | Afsluttet (rekonstruktion / forebyggende rekonstruktion) |
+        | ANMODNING_OM_OPHAEVELSE_IKKE_IMOEDEKOMMET | Anmodning om ophævelse ikke imødekommet | Afsluttet (rekonstruktion / gældssanering) |
+        | GENOPTAGELSE_IKKE_IMOEDEKOMMET | Genoptagelse ikke imødekommet | Afsluttet (rekonstruktion / gældssanering / ægtefælleskifte) |
+        | GAELDSSANERING_GIVET_GAELD_BORTFALDET | Gældssanering givet. Gæld bortfaldet | Afsluttet (gældssanering) |
+        | GAELDSSANERING_GIVET_GAELD_NEDSAT | Gældssanering givet. Gæld nedsat | Afsluttet (gældssanering) |
+        | GAELDSSANERING_NAEGTET | Gældssanering nægtet | Afsluttet (gældssanering) |
+        | GAELDSSANERINGSKENDELSE_OPHAEVET | Gældssaneringskendelse ophævet | Afsluttet (gældssanering) |
+        | GAELDSSANERINGSKENDELSE_AENDRET | Gældssaneringskendelse ændret | Afsluttet (gældssanering) |
+        | INDLEDNING_NAEGTET | Indledning nægtet | Afsluttet (gældssanering) |
+        | TILBAGEKALDT_EFTER_INDLEDNING | Tilbagekaldt efter indledning | Afsluttet (gældssanering / rekonstruktion / forebyggende rekonstruktion) |
+        | TILBAGEKALDT_FOER_INDLEDNING | Tilbagekaldt før indledning | Afsluttet (gældssanering / rekonstruktion / forebyggende rekonstruktion) |
+        | AFBRUDT_SKIFTE | Afbrudt skifte | Afsluttet (ægtefælleskifte) |
+        | BOOPGOERELSE_STADFAESTET | Boopgørelse stadfæstet | Afsluttet (ægtefælleskifte) |
+        | EDITION_NAEGTET_PARAGRAF_65 | Edition nægtet (§ 65) | Afsluttet (ægtefælleskifte) |
+        | EDITION_PAALAGT_PARAGRAF_65 | Edition pålagt (§ 65) | Afsluttet (ægtefælleskifte) |
+        | FORLIGT_I_OEVRIGT | Forligt i øvrigt | Afsluttet (ægtefælleskifte) |
+        | FORLIGT_PAA_MAEGLINGS_OG_VEJLEDNINGSMOEDE | Forligt på mæglings- og vejledningsmøde | Afsluttet (ægtefælleskifte) |
+        | RETSMOEDE_FORKLARING_GENNEMFOERT_PARAGRAF_65 | Retsmøde/forklaring gennemført (§ 65) | Afsluttet (ægtefælleskifte) |
+        | SLUTTET_EFTER_MAEGLINGS_OG_VEJLEDNINGSMOEDE | Sluttet efter mæglings- og vejledningsmøde | Afsluttet (ægtefælleskifte) |
+        | VURDERINGSMAND_UDPEGET_PARAGRAF_65 | Vurderingsmand udpeget § 65 | Afsluttet (andre sager efter selskabsloven) |
+      type: string
+      enum:
+      - NY_SAG
+      - UNDER_BEHANDLING
+      - UDLEVERET
+      - GENOPTAGET
+      - FEJLOPRETTET
+      - HENVIST
+      - TILBAGEKALDT
+      - ANALOGI_AF_PARAGRAF_143
+      - ANNULLERET
+      - FUSION
+      - SOLVENT_LIKVIDATION
+      - SPALTNING
+      - KONKURSDEKRET_AFSAGT
+      - BORTFALDET
+      - AFVIST
+      - BEGAERING_IKKE_IMOEDEKOMMET
+      - SLUTTET_EFTER_PARAGRAF_143
+      - SLUTTET_EFTER_PARAGRAF_144_UDLEVERET_TIL_SKYLDNER
+      - SLUTTET_EFTER_PARAGRAF_144_UDLEVERET_TIL_KAPITALEJER
+      - SLUTTET_EFTER_PARAGRAF_144_TVANG_GENOPTAGET
+      - SLUTTET_EFTER_PARAGRAF_148
+      - SLUTTET_EFTER_PARAGRAF_149
+      - SLUTTET_EFTER_PARAGRAF_149_ENDELIG
+      - TILBAGEKALDT_EFTER_DEKRET_PARAGRAF_21_STK_3
+      - TILBAGEKALDT_EFTER_DEKRET_PARAGRAF_21_STK_3_TVANG_GENOPTAGET
+      - SLUTTET_MED_DEKRET_I_ANDEN_SAG
+      - SLUTTET_MED_REKONSTRUKTION
+      - TILBAGEKALDT_FOER_DEKRET
+      - BEGAERING_IMOEDEKOMMET
+      - REASSUMPTION_AFSLUTTET
+      - FOREBYGGENDE_REKONSTRUKTIONSBEHANDLING_OPHOERT
+      - OPHAEVELSE_AF_REKONSTRUKTION
+      - REKONSTRUKTIONSBEHANDLING_OPHOERT
+      - REKONSTRUKTIONSFORSLAG_STADFAESTET
+      - ANMODNING_OM_OPHAEVELSE_IKKE_IMOEDEKOMMET
+      - GENOPTAGELSE_IKKE_IMOEDEKOMMET
+      - GAELDSSANERING_GIVET_GAELD_BORTFALDET
+      - GAELDSSANERING_GIVET_GAELD_NEDSAT
+      - GAELDSSANERING_NAEGTET
+      - GAELDSSANERINGSKENDELSE_OPHAEVET
+      - GAELDSSANERINGSKENDELSE_AENDRET
+      - INDLEDNING_NAEGTET
+      - TILBAGEKALDT_EFTER_INDLEDNING
+      - TILBAGEKALDT_FOER_INDLEDNING
+      - AFBRUDT_SKIFTE
+      - BOOPGOERELSE_STADFAESTET
+      - EDITION_NAEGTET_PARAGRAF_65
+      - EDITION_PAALAGT_PARAGRAF_65
+      - FORLIGT_I_OEVRIGT
+      - FORLIGT_PAA_MAEGLINGS_OG_VEJLEDNINGSMOEDE
+      - RETSMOEDE_FORKLARING_GENNEMFOERT_PARAGRAF_65
+      - SLUTTET_EFTER_MAEGLINGS_OG_VEJLEDNINGSMOEDE
+      - VURDERINGSMAND_UDPEGET_PARAGRAF_65
+    insolvenssagTypeEksternV2:
+      description: Sagstype for en insolvenssag, dækkende alle 7 sagstyper der understøttes
+        af v2-API'et.
+      type: string
+      enum:
+      - TVANGSOPLOESNING
+      - KONKURS
+      - GAELDSSANERING
+      - REKONSTRUKTION
+      - FOREBYGGENDE_REKONSTRUKTION
+      - AEGTEFAELLESKIFTE
+      - ANDRE_SAGER_EFTER_SELSKABSLOVEN
+    sagsdeltagerEksternV2:
+      description: Sagsdeltager på en insolvenssag. Hvilke sagsdeltagere og felter
+        den enkelte eksterne bruger kan se, afhænger af brugerens rolle på sagen iht.
+        rettighedsmatricen (Confluence/Excel Source of Truth).
+      example:
+        sagsdeltagerId: 6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b
+        navn: Eksempel A/S
+        cvrNummer: '12345678'
+        reklamebeskyttet: false
+        type: VIRKSOMHED
+        rolle: SELSKAB
+        gruppe: HOVEDPART
+        passiveret: false
+        sagsdeltagerReference: J-2026-0042
+        kontaktoplysninger:
+          navn: Anne Sekretær
+          telefonnummer: '+4512345678'
+          email: kontakt@eksempel.dk
+      required:
+      - sagsdeltagerId
+      - type
+      - rolle
+      - gruppe
+      - passiveret
+      properties:
+        sagsdeltagerId:
+          $ref: '#/components/schemas/id'
+        navn:
+          description: Navn på personen (fulde navn hvis angivet, ellers navn fra
+            CPR), virksomheden eller det embede sagsdeltageren repræsenterer. Er ikke
+            required, da navnet udelades eller er null for roller der ikke må se det
+            (fx brugere uden rolle på sagen, eller når en anden sagsdeltager/repræsentant
+            har navne- og adressebeskyttelse og ses af en rolle uden adgang; hovedpartens
+            og rettens udpegedes navn vises dog uanset navne- og adressebeskyttelse).
+          type: string
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+          description: CVR-nummer for virksomheden, rettens udpegedes firma eller
+            en personskyldner med enkeltmandsvirksomhed. Udelades hvis ikke relevant
+            eller skjult for brugerens rolle.
+        type:
+          $ref: '#/components/schemas/sagsdeltagerTypeEksternV2'
+        rolle:
+          $ref: '#/components/schemas/sagsdeltagerRolleEnumEksternV2'
+        fritekstRolle:
+          description: Fritekst-beskrivelse af rollen, kun udfyldt hvis rolle er ANDEN_SAGSDELTAGER
+            eller ANDEN_REPRAESENTANT.
+          type: string
+        gruppe:
+          $ref: '#/components/schemas/sagsdeltagerGruppeEksternV2'
+        passiveret:
+          description: Angiver om sagsdeltageren er passiveret (ikke længere aktiv
+            på sagen). Passiverede sagsdeltagere udstilles ikke til eksterne brugere.
+          type: boolean
+        navnOgAdresseBeskyttet:
+          description: Angiver om sagsdeltageren har beskyttet navn og adresse i CPR.
+            Optræder kun for personer.
+          type: boolean
+        reklamebeskyttet:
+          description: Angiver om virksomheden er reklamebeskyttet i CVR. Optræder
+            kun for virksomheder (eller personskyldner med CVR).
+          type: boolean
+        sagsdeltagerReference:
+          description: Sagsdeltagerens eget journalnummer (j.nr.), myndigheds sagsnummer
+            eller lignende reference på sagen. Udelades hvis ikke angivet eller skjult
+            for brugerens rolle.
+          type: string
+        rolleDetaljer:
+          $ref: '#/components/schemas/sagsdeltagerRolleDetaljerEksternV2'
+        adresse:
+          $ref: '#/components/schemas/sagsdeltagerAdresseEksternV2'
+          description: Primær adresse (CPR-, CVR- eller firmaadresse) for sagsdeltageren
+            inkl. markering af hemmelig adresse.
+        andenAdresse:
+          description: Eventuelle alternative adresser for sagsdeltageren.
+          type: array
+          items:
+            $ref: '#/components/schemas/sagsdeltagerAdresseEksternV2'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/sagsdeltagerKontaktoplysningerEksternV2'
+          description: Sagsdeltagerens egne kontaktoplysninger (telefonnummer og email
+            samt evt. kontaktpersonens navn).
+        repraesentanter:
+          description: Sagsdeltagere der repræsenterer denne sagsdeltager, fx en advokat
+            eller anden mandatar.
+          type: array
+          items:
+            $ref: '#/components/schemas/repraesentantEksternV2'
+        repraesentererSagsdeltagerId:
+          description: Sagsdeltager-ID på den eller de sagsdeltagere på sagen, som
+            denne sagsdeltager er repræsentant for (kun udfyldt når gruppe er REPRAESENTANT).
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+    repraesentantEksternV2:
+      description: Repræsentant for en sagsdeltager, fx en advokat eller anden mandatar.
+        Har samme felter som sagsdeltagerEksternV2, men uden yderligere repræsentanter
+        (dybden er begrænset til ét led).
+      required:
+      - sagsdeltagerId
+      - type
+      - rolle
+      - gruppe
+      - passiveret
+      properties:
+        sagsdeltagerId:
+          $ref: '#/components/schemas/id'
+        navn:
+          description: Navn på personen (fulde navn hvis angivet, ellers navn fra
+            CPR), virksomheden eller det embede repræsentanten repræsenterer. Er ikke
+            required, da navnet udelades eller er null når repræsentanten er en person
+            med navne- og adressebeskyttelse og ses af en rolle der ikke må se navnet
+            (fx rekvirent eller anden sagsdeltager).
+          type: string
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+          description: CVR-nummer hvis repræsentanten er en virksomhed (fx advokatfirma).
+            Udelades hvis ikke relevant eller skjult for brugerens rolle.
+        type:
+          $ref: '#/components/schemas/sagsdeltagerTypeEksternV2'
+        rolle:
+          $ref: '#/components/schemas/sagsdeltagerRolleEnumEksternV2'
+        fritekstRolle:
+          description: Fritekst-beskrivelse af rollen, kun udfyldt hvis rolle er ANDEN_SAGSDELTAGER
+            eller ANDEN_REPRAESENTANT.
+          type: string
+        gruppe:
+          $ref: '#/components/schemas/sagsdeltagerGruppeEksternV2'
+        passiveret:
+          description: Angiver om repræsentanten er passiveret (ikke længere aktiv
+            på sagen).
+          type: boolean
+        navnOgAdresseBeskyttet:
+          description: Angiver om repræsentanten har beskyttet navn og adresse i CPR.
+            Optræder kun for personer.
+          type: boolean
+        reklamebeskyttet:
+          description: Angiver om repræsentantens virksomhed er reklamebeskyttet i
+            CVR. Optræder kun for virksomheder.
+          type: boolean
+        sagsdeltagerReference:
+          description: Repræsentantens journalnummer (j.nr.) eller lignende reference
+            på sagen. Udelades hvis ikke angivet eller skjult for brugerens rolle.
+          type: string
+        rolleDetaljer:
+          $ref: '#/components/schemas/sagsdeltagerRolleDetaljerEksternV2'
+        adresse:
+          $ref: '#/components/schemas/sagsdeltagerAdresseEksternV2'
+          description: Primær adresse (CPR- eller CVR-adresse) for repræsentanten
+            inkl. markering af hemmelig adresse.
+        andenAdresse:
+          description: Eventuelle alternative adresser for repræsentanten.
+          type: array
+          items:
+            $ref: '#/components/schemas/sagsdeltagerAdresseEksternV2'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/sagsdeltagerKontaktoplysningerEksternV2'
+    sagsdeltagerTypeEksternV2:
+      description: Overordnet type af sagsdeltager (person, virksomhed eller anden
+        part).
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - ANDEN
+    sagsdeltagerRolleEnumEksternV2:
+      description: |
+        Rollen en sagsdeltager har på sagen. Hver rolle tilhører præcis én gruppe (se sagsdeltagerGruppeEksternV2):
+
+        | Gruppe | Roller |
+        |---|---|
+        | HOVEDPART | SKYLDNER, SELSKAB, MODPART, ANSOEGER, ANMODER |
+        | OEVRIG_PART | LEDELSE, DIREKTOER, BESTYRELSESFORMAND, BESTYRELSESMEDLEM, TIDLIGERE_LEDELSE, TIDLIGERE_DIREKTOER, TIDLIGERE_BESTYRELSESFORMAND, TIDLIGERE_BESTYRELSESMEDLEM, TIDLIGERE_LIKVIDATOR, REKVIRENT |
+        | REPRAESENTANT | ADVOKAT, MANDATAR, VAERGE, ANDEN_REPRAESENTANT |
+        | RETTENS_UDPEGEDE | LIKVIDATOR, REKONSTRUKTOER, KURATOR, AD_HOC_KURATOR, BOBEHANDLER, MEDHJAELPER |
+        | ANDEN_SAGSDELTAGER | KREDITOR, REVISOR, ANDEN_SAGSDELTAGER, INDSENDER |
+
+        INDSENDER er den der har indsendt sagen (fx anmodningen). MEDHJAELPER er en medhjælper til en af rettens udpegede (fx kurators medhjælper) og udstilles, da den kan forekomme på sagen.
+      type: string
+      enum:
+      - SKYLDNER
+      - SELSKAB
+      - REKVIRENT
+      - ANSOEGER
+      - ANMODER
+      - MODPART
+      - ADVOKAT
+      - MANDATAR
+      - VAERGE
+      - LEDELSE
+      - DIREKTOER
+      - BESTYRELSESFORMAND
+      - BESTYRELSESMEDLEM
+      - TIDLIGERE_LEDELSE
+      - TIDLIGERE_DIREKTOER
+      - TIDLIGERE_BESTYRELSESFORMAND
+      - TIDLIGERE_BESTYRELSESMEDLEM
+      - TIDLIGERE_LIKVIDATOR
+      - REVISOR
+      - KREDITOR
+      - ANDEN_SAGSDELTAGER
+      - ANDEN_REPRAESENTANT
+      - LIKVIDATOR
+      - REKONSTRUKTOER
+      - KURATOR
+      - AD_HOC_KURATOR
+      - BOBEHANDLER
+      - MEDHJAELPER
+      - INDSENDER
+    sagsdeltagerGruppeEksternV2:
+      description: Overordnet gruppering af sagsdeltagerens rolle. Hvilken gruppe
+        en rolle tilhører fremgår af tabellen under sagsdeltagerRolleEnumEksternV2.
+      type: string
+      enum:
+      - HOVEDPART
+      - OEVRIG_PART
+      - REPRAESENTANT
+      - RETTENS_UDPEGEDE
+      - ANDEN_SAGSDELTAGER
+    sagsdeltagerAdresseEksternV2:
+      description: Adresse for en sagsdeltager. Hvis adressen er hemmelig eller beskyttet
+        og læserens rolle ikke må se selve adressen, udelades adresse mens adresseHemmelig
+        angiver beskyttelsen.
+      type: object
+      required:
+      - adresseHemmelig
+      properties:
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        adresseHemmelig:
+          description: Angiver om adressen er hemmelig eller ej.
+          type: boolean
+    sagsdeltagerKontaktoplysningerEksternV2:
+      description: Kontaktoplysninger (navn, telefonnummer og/eller email) for en
+        sagsdeltager.
+      properties:
+        navn:
+          description: Navn på fx sekretæren hos et advokatfirma.
+          type: string
+          maxLength: 100
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+    sagsdeltagerRolleDetaljerEksternV2:
+      description: Rollespecifikke detaljer. Præcis én variant returneres, og discriminatoren
+        rolleDetaljerType (RETTENS_UDPEGEDE eller LEDELSESMEDLEM) afgør hvilken.
+      type: object
+      oneOf:
+      - $ref: '#/components/schemas/rettensUdpegedeRolleDetaljerEksternV2'
+      - $ref: '#/components/schemas/ledelsesmedlemRolleDetaljerEksternV2'
+      discriminator:
+        propertyName: rolleDetaljerType
+        mapping:
+          RETTENS_UDPEGEDE: '#/components/schemas/rettensUdpegedeRolleDetaljerEksternV2'
+          LEDELSESMEDLEM: '#/components/schemas/ledelsesmedlemRolleDetaljerEksternV2'
+    rettensUdpegedeRolleDetaljerEksternV2:
+      description: Detaljer for rettens udpegede roller, fx likvidator, kurator, rekonstruktør
+        eller bobehandler.
+      type: object
+      required:
+      - rolleDetaljerType
+      - aktiv
+      - inhabel
+      properties:
+        rolleDetaljerType:
+          description: Altid RETTENS_UDPEGEDE for denne variant (discriminator).
+          type: string
+          pattern: ^RETTENS_UDPEGEDE$
+        aktiv:
+          description: Angiver om den af retten udpegede aktuelt er aktiv i rollen
+            på sagen.
+          type: boolean
+        inhabel:
+          description: Angiver om den af retten udpegede er registreret som inhabil
+            på sagen.
+          type: boolean
+        firmanavn:
+          description: Navn på det advokatfirma eller den virksomhed, som den af retten
+            udpegede tilhører.
+          type: string
+        kontaktperson:
+          $ref: '#/components/schemas/sagsdeltagerKontaktoplysningerEksternV2'
+          description: Sekretær eller anden kontaktperson hos den af retten udpegede
+            (navn, telefonnummer og email). Udelades for indsender og brugere uden
+            rolle på sagen.
+        udpeget:
+          description: Tidspunkt hvor sagsdeltageren blev udpeget (date-time med tidszoneoffset,
+            se Dato og tid i info.description).
+          type: string
+          format: date-time
+        fratradt:
+          description: Tidspunkt hvor sagsdeltageren fratrådte (date-time med tidszoneoffset,
+            se Dato og tid i info.description).
+          type: string
+          format: date-time
+    ledelsesmedlemRolleDetaljerEksternV2:
+      description: Detaljer for ledelsesmedlemmer, fx direktør eller bestyrelsesmedlem.
+      type: object
+      required:
+      - rolleDetaljerType
+      properties:
+        rolleDetaljerType:
+          description: Altid LEDELSESMEDLEM for denne variant (discriminator).
+          type: string
+          pattern: ^LEDELSESMEDLEM$
+        tiltraadt:
+          description: Dato hvor ledelsesmedlemmet tiltrådte.
+          type: string
+          format: date
+        fratradt:
+          description: Dato hvor ledelsesmedlemmet fratrådte.
+          type: string
+          format: date
+    opdaterSagsdeltagerKontaktoplysningerEksternV2:
+      description: Opdatering af egne kontaktoplysninger som sagsdeltager.
+      required:
+      - kontaktoplysninger
+      properties:
+        kontaktoplysninger:
+          $ref: '#/components/schemas/sagsdeltagerKontaktoplysningerEksternV2'
+    skrivTilRettenV2:
+      description: Data til en skrivelse til retten. Emnet vælges via emneKey fra
+        emne-kataloget. Der skal angives tekst eller mindst ét bilag (valideres af
+        tjenesten).
+      type: object
+      additionalProperties: false
+      required:
+      - emneKey
+      properties:
+        emneKey:
+          description: Den tekniske nøgle for det valgte emne fra emne-kataloget.
+          type: string
+          minLength: 1
+          example: ANMODNING__AKTINDSIGT
+        fritekstEmne:
+          description: Kort fritekstemne. Må kun angives når emneKey er ANDET__FRITEKST.
+          type: string
+          maxLength: 50
+        tekst:
+          description: Skrivelsens tekst.
+          type: string
+          maxLength: 3000
+        dokumenter:
+          description: Liste af bilag der ønskes vedhæftet skrivelsen. Hvert bilag
+            uploades først til dokumentlageret, og det returnerede tekniske ID/reference
+            for dokumentet anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+    skrivTilRettenEmneV2:
+      description: En valgmulighed (kategori og emne) til skriv til retten.
+      required:
+      - kategori
+      - emne
+      - key
+      properties:
+        kategori:
+          description: Den brugerrettede kategori som emnet tilhører.
+          type: string
+          example: Anmodning
+        emne:
+          description: Det brugerrettede emne.
+          type: string
+          example: Aktindsigt
+        key:
+          description: Den stabile tekniske nøgle der sendes som emneKey ved oprettelse
+            af skrivelsen.
+          type: string
+          example: ANMODNING__AKTINDSIGT
+    kontaktoplysningerV2:
+      description: Kontaktoplysninger (email adresse og/eller telefonnummer) for en
+        person eller virksomhed.
+      properties:
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+    insolvensDokumentV2:
+      description: Dokument relateret til insolvens.
+      required:
+      - reference
+      - type
+      properties:
+        reference:
+          $ref: '#/components/schemas/dokumentReferenceV2'
+        type:
+          $ref: '#/components/schemas/insolvensDokumentTypeV2'
+    haendelsePartEksternV2:
+      description: Part der har udført en hændelse eller oprettet en dokumentsamling
+        på sagen. Feltet type angiver partstypen. Hvis en domstolsmedarbejder har
+        foretaget handlingen, angives retskredsens embedskode i feltet intern. Person-
+        og fritekstdetaljer udleveres kun, når den indloggede bruger har adgang til
+        at se parten.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/haendelsePartTypeV2'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        person:
+          $ref: '#/components/schemas/personReference'
+        fritekst:
+          $ref: '#/components/schemas/fritekstPart'
+        partner:
+          $ref: '#/components/schemas/partnerReference'
+        intern:
+          $ref: '#/components/schemas/embedskode'
+        system:
+          $ref: '#/components/schemas/systemPart'
+    tredjepartV2:
+      description: Tredjepart for krav (kreditor) og tilgodehavender (debitor) der
+        indberettes på vegne af.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/tredjepartTypeEnumV2'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        anden:
+          $ref: '#/components/schemas/fritekstPart'
+    sikkerhedV2:
+      description: Sikkerhed for et krav (pant eller ejendomsforbehold).
+      required:
+      - sikkerhedsform
+      properties:
+        sikkerhedsform:
+          $ref: '#/components/schemas/sikkerhedsformEnumV2'
+        pantTekst:
+          description: Beskrivelse af det pantsatte eller omfattede aktiv.
+          maxLength: 500
+          type: string
+    danskAdresseV2:
+      description: Dansk adresse.
+      required:
+      - adresselinje
+      - postnummer
+      - by
+      properties:
+        adresselinje:
+          description: Gadenavn, husnummer, etage m.v.
+          type: string
+          maxLength: 255
+        postnummer:
+          description: Dansk postnummer (4 cifre).
+          type: string
+          maxLength: 4
+        by:
+          description: Bynavn.
+          type: string
+          maxLength: 255
+    andenAdresseV2:
+      description: Evt. anden adresse for en person eller virksomhed.
+      required:
+      - danskAdresse
+      properties:
+        careOf:
+          description: C/o felt.
+          type: string
+          maxLength: 200
+        danskAdresse:
+          $ref: '#/components/schemas/danskAdresseV2'
+    nulkravOpdateringV2:
+      description: Oprettelse eller opdatering af nulkrav.
+      properties:
+        bemaerkninger:
+          description: Eventuelle bemærkninger til nulkravet.
+          type: string
+          maxLength: 1200
+        bilag:
+          description: Liste (potentielt tom) af bilag som Gældsstyrelsen ønsker at
+            uploade til at understøtte nul-kravet. Hvert bilag uploades først til
+            dokumentlageret, og det returnerede tekniske ID/reference for dokumentet
+            anvendes her.
+          type: array
+          items:
+            $ref: '#/components/schemas/dokumentReferenceV2'
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    id:
+      type: string
+      format: uuid
+    cvrNummer:
+      type: string
+      pattern: ^[1-9][0-9]{7}$
+    email:
+      type: string
+      format: email
+      maxLength: 128
+    telefonnummer:
+      type: string
+      pattern: ^\+?\d*$
+      maxLength: 20
+    oprettelsestidspunkt:
+      type: string
+      format: date-time
+    redigeringstidspunkt:
+      type: string
+      format: date-time
+    embedskode:
+      description: Unik forkortelse for et givent embede, der kan anvendes til identificering
+        af et specifik embede i retskreds-service.
+      type: string
+      pattern: ^[A-ZÆØÅ]{3}$
+      maxLength: 3
+      minLength: 3
+    positivtDecimaltal:
+      type: number
+      minimum: 0.01
+    positivtDecimaltalEllerNul:
+      type: number
+      minimum: 0
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+    landekodeEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - AF
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - AR
+      - AM
+      - AW
+      - AZ
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BY
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - IO
+      - VG
+      - BN
+      - BG
+      - BF
+      - BI
+      - KH
+      - CM
+      - CA
+      - KY
+      - CF
+      - CL
+      - CC
+      - CO
+      - KM
+      - CD
+      - CG
+      - CK
+      - CR
+      - CU
+      - CW
+      - CY
+      - DK
+      - DJ
+      - DM
+      - DO
+      - EC
+      - EG
+      - SV
+      - CI
+      - ER
+      - EE
+      - SZ
+      - ET
+      - FK
+      - FJ
+      - PH
+      - FI
+      - AE
+      - FR
+      - GF
+      - PF
+      - TF
+      - FO
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - CX
+      - CV
+      - KZ
+      - KE
+      - CN
+      - KG
+      - KI
+      - HR
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NL
+      - NP
+      - NZ
+      - NI
+      - NE
+      - NG
+      - NU
+      - KP
+      - MK
+      - MP
+      - NF
+      - 'NO'
+      - NC
+      - OM
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PN
+      - PL
+      - PT
+      - PR
+      - QA
+      - RE
+      - RO
+      - RU
+      - RW
+      - SB
+      - WS
+      - SM
+      - ST
+      - SA
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - BL
+      - SH
+      - KN
+      - LC
+      - SX
+      - PM
+      - VC
+      - SK
+      - SI
+      - SO
+      - ES
+      - LK
+      - MF
+      - GB
+      - SD
+      - SR
+      - SJ
+      - SE
+      - ZA
+      - GS
+      - KR
+      - SS
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TD
+      - TH
+      - CZ
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TC
+      - TV
+      - TR
+      - DE
+      - UG
+      - UA
+      - HU
+      - UY
+      - US
+      - UM
+      - UZ
+      - VU
+      - VA
+      - VE
+      - EH
+      - VN
+      - WF
+      - YE
+      - ZM
+      - ZW
+      - GQ
+      - AT
+      - TL
+      - AX
+    struktureretDanskAdresse:
+      description: Dansk struktureret adresse.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje
+      - postnummer
+      - postdistrikt
+      properties:
+        darId:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        postdistrikt:
+          description: Navnet på postnummeret. Dette fremstilles typisk som sidste
+            led, fx 2630 Taastrup.
+          type: string
+        supplerendeBynavn:
+          description: 'Optionelt felt - typisk landsbyens navn eller andet lokalt
+            stednavn der er fastsat af kommunen for at præcisere adressens beliggenhed
+            indenfor postnummeret. Indgår som en del af den officielle adressebetegnelse.
+            Indtil 34 tegn. Eksempel: ”Sønderholm”.'
+          type: string
+          maxLength: 34
+    fritekstadresse:
+      description: Danske eller udenlandsk adresse i fritekstform.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje1
+      properties:
+        adresselinje1:
+          type: string
+          maxLength: 200
+        adresselinje2:
+          type: string
+          maxLength: 200
+        adresselinje3:
+          type: string
+          maxLength: 200
+        adresselinje4:
+          type: string
+          maxLength: 200
+        adresselinje5:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    adresse:
+      description: Wrapper til adresser af forskellige typer.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adressetype
+      properties:
+        struktureretDanskAdresse:
+          $ref: '#/components/schemas/struktureretDanskAdresse'
+        fritekstadresse:
+          $ref: '#/components/schemas/fritekstadresse'
+        adressetype:
+          $ref: '#/components/schemas/adressetype'
+    adressetype:
+      x-namespace: dk.domstol.oas.common.adressev2
+      type: string
+      enum:
+      - STRUKTURERET_DANSK_ADRESSE
+      - FRITEKSTADRESSE
+      - INGEN_ADRESSE
+    partTypeEnum:
+      x-namespace: dk.domstol.oas.common
+      description: Type af part. Person givet ved CPR-nummer, virksomhed givet ved
+        CVR-nummer eller udenlandsk virksomhed eller person.
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - UDENLANDSK
+    part:
+      x-namespace: dk.domstol.oas.common
+      description: Part givet ved typen (person, virksomhed eller udenlandsk) og de
+        tilhørende underelementer for typen.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/partTypeEnum'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        person:
+          $ref: '#/components/schemas/personReference'
+        udenlandsk:
+          $ref: '#/components/schemas/fritekstPart'
+    personReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til person som har og kan identificeres med et CPR-nr.
+      required:
+      - personId
+      properties:
+        personId:
+          $ref: '#/components/schemas/id'
+    virksomhedReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til virksomhed.
+      required:
+      - cvrNummer
+      properties:
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+    fritekstPart:
+      x-namespace: dk.domstol.oas.common
+      description: Fritekst part (person) givet ved et navn og en adresse. Benyttes
+        når personen ikke har et CPR-nr.
+      required:
+      - navn
+      - adresse
+      properties:
+        navn:
+          type: string
+          maxLength: 200
+        adresse:
+          $ref: '#/components/schemas/fritekstadresse'
+    partnerReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til partner med et partnerId i partner registeret.
+      required:
+      - partnerId
+      properties:
+        partnerId:
+          $ref: '#/components/schemas/id'
+    systemPart:
+      required:
+      - name
+      properties:
+        name:
+          type: string
+  headers:
+    totalCount:
+      description: Det totale antal resultater i listen.
+      schema:
+        type: integer
+  requestBodies: {
+    }

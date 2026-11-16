@@ -1,0 +1,562 @@
+openapi: 3.0.3
+info:
+  title: Api til at hente personer
+  description: Api til at hente personer.
+  version: 3.0.13
+servers:
+- url: http://localhost:8080
+paths:
+  /personer/{personId}:
+    get:
+      parameters:
+      - $ref: '#/components/parameters/personId'
+      tags:
+      - person
+      operationId: getPersonById
+      summary: Finder person med det angivne personId.
+      deprecated: true
+      responses:
+        '200':
+          description: Personen med det angivne personId returneres (uden CPR-nummer).
+            Hvis personen er afdød og underlagt navne- og adressebeskyttelse på dødstidspunktet
+            maskeres disse værdier for alle andre end sagsbehandler.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/person'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/personer/{personId}:
+    get:
+      parameters:
+      - $ref: '#/components/parameters/personId'
+      tags:
+      - person
+      operationId: getPersonByIdV2
+      summary: Finder person med det angivne personId. Benyttes til insolvens området.
+      responses:
+        '200':
+          description: Personen med det angivne personId returneres (uden CPR-nummer).
+            Hvis personen er afdød og underlagt navne- og adressebeskyttelse på dødstidspunktet
+            maskeres disse værdier for alle andre end sagsbehandler.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/person'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v3/personer/{personId}:
+    get:
+      parameters:
+      - $ref: '#/components/parameters/personId'
+      tags:
+      - person
+      operationId: getPersonByIdV3
+      summary: Finder person med det angivne personId.
+      responses:
+        '200':
+          description: Personen med det angivne personId returneres (uden CPR-nummer).
+            Hvis personen er afdød og underlagt navne- og adressebeskyttelse på dødstidspunktet
+            maskeres disse værdier for alle andre end sagsbehandler.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cprPerson'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /identitet:
+    get:
+      tags:
+      - person
+      operationId: getIdentityFromToken
+      summary: Finder person fra token.
+      deprecated: true
+      responses:
+        '200':
+          description: Personen fra token returneres (uden CPR-nummer).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/person'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/identitet:
+    get:
+      tags:
+      - person
+      operationId: getIdentityFromTokenV2
+      summary: Finder person fra token.
+      responses:
+        '200':
+          description: Personen fra token returneres (uden CPR-nummer).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/person'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v3/identitet:
+    get:
+      tags:
+      - person
+      operationId: getIdentityFromTokenV3
+      summary: Finder person fra token.
+      responses:
+        '200':
+          description: Personen fra token returneres (uden CPR-nummer).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cprPerson'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+security:
+- bearerAuth: [
+    ]
+components:
+  parameters:
+    personId:
+      name: personId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+      description: Id på en person.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    person:
+      properties:
+        adresse:
+          $ref: '#/components/schemas/darAdresse'
+        personId:
+          $ref: '#/components/schemas/id'
+        fornavne:
+          type: string
+        efternavn:
+          type: string
+        foedselsdato:
+          type: string
+          format: date
+        erNavnAdresseBeskyttet:
+          type: boolean
+      required:
+      - foedselsdato
+    cprPerson:
+      properties:
+        adresse:
+          $ref: '#/components/schemas/adresse'
+        personId:
+          $ref: '#/components/schemas/id'
+        fornavne:
+          type: string
+        efternavn:
+          type: string
+        foedselsdato:
+          type: string
+          format: date
+        erNavnAdresseBeskyttet:
+          type: boolean
+      required:
+      - foedselsdato
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: string
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      type: string
+    id:
+      type: string
+      format: uuid
+    retskredsId:
+      description: Unikt ID for en given retskreds, der kan anvendes til identificering
+        af en specifik retskreds i retskreds-service.
+      type: string
+      pattern: ^\d{4}$
+    darAdresse:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common
+      description: Repræsentation af adresse fra Dansk Adresse Register (DAR).
+      required:
+      - id
+      - adresselinje
+      - postnummer
+      - by
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        by:
+          type: string
+        retskredsId:
+          $ref: '#/components/schemas/retskredsId'
+    landekodeEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - AF
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - AR
+      - AM
+      - AW
+      - AZ
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BY
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - IO
+      - VG
+      - BN
+      - BG
+      - BF
+      - BI
+      - KH
+      - CM
+      - CA
+      - KY
+      - CF
+      - CL
+      - CC
+      - CO
+      - KM
+      - CD
+      - CG
+      - CK
+      - CR
+      - CU
+      - CW
+      - CY
+      - DK
+      - DJ
+      - DM
+      - DO
+      - EC
+      - EG
+      - SV
+      - CI
+      - ER
+      - EE
+      - SZ
+      - ET
+      - FK
+      - FJ
+      - PH
+      - FI
+      - AE
+      - FR
+      - GF
+      - PF
+      - TF
+      - FO
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - CX
+      - CV
+      - KZ
+      - KE
+      - CN
+      - KG
+      - KI
+      - HR
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NL
+      - NP
+      - NZ
+      - NI
+      - NE
+      - NG
+      - NU
+      - KP
+      - MK
+      - MP
+      - NF
+      - 'NO'
+      - NC
+      - OM
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PN
+      - PL
+      - PT
+      - PR
+      - QA
+      - RE
+      - RO
+      - RU
+      - RW
+      - SB
+      - WS
+      - SM
+      - ST
+      - SA
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - BL
+      - SH
+      - KN
+      - LC
+      - SX
+      - PM
+      - VC
+      - SK
+      - SI
+      - SO
+      - ES
+      - LK
+      - MF
+      - GB
+      - SD
+      - SR
+      - SJ
+      - SE
+      - ZA
+      - GS
+      - KR
+      - SS
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TD
+      - TH
+      - CZ
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TC
+      - TV
+      - TR
+      - DE
+      - UG
+      - UA
+      - HU
+      - UY
+      - US
+      - UM
+      - UZ
+      - VU
+      - VA
+      - VE
+      - EH
+      - VN
+      - WF
+      - YE
+      - ZM
+      - ZW
+      - GQ
+      - AT
+      - TL
+      - AX
+    struktureretDanskAdresse:
+      description: Dansk struktureret adresse.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje
+      - postnummer
+      - postdistrikt
+      properties:
+        darId:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        postdistrikt:
+          description: Navnet på postnummeret. Dette fremstilles typisk som sidste
+            led, fx 2630 Taastrup.
+          type: string
+        supplerendeBynavn:
+          description: 'Optionelt felt - typisk landsbyens navn eller andet lokalt
+            stednavn der er fastsat af kommunen for at præcisere adressens beliggenhed
+            indenfor postnummeret. Indgår som en del af den officielle adressebetegnelse.
+            Indtil 34 tegn. Eksempel: ”Sønderholm”.'
+          type: string
+          maxLength: 34
+    fritekstadresse:
+      description: Danske eller udenlandsk adresse i fritekstform.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje1
+      properties:
+        adresselinje1:
+          type: string
+          maxLength: 200
+        adresselinje2:
+          type: string
+          maxLength: 200
+        adresselinje3:
+          type: string
+          maxLength: 200
+        adresselinje4:
+          type: string
+          maxLength: 200
+        adresselinje5:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    adresse:
+      description: Wrapper til adresser af forskellige typer.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adressetype
+      properties:
+        struktureretDanskAdresse:
+          $ref: '#/components/schemas/struktureretDanskAdresse'
+        fritekstadresse:
+          $ref: '#/components/schemas/fritekstadresse'
+        adressetype:
+          $ref: '#/components/schemas/adressetype'
+    adressetype:
+      x-namespace: dk.domstol.oas.common.adressev2
+      type: string
+      enum:
+      - STRUKTURERET_DANSK_ADRESSE
+      - FRITEKSTADRESSE
+      - INGEN_ADRESSE
+      - null
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+  headers: {
+    }
+  responses:
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies: {
+    }

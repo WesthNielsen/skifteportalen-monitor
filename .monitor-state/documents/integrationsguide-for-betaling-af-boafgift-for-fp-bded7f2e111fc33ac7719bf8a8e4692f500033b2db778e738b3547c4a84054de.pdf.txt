@@ -1,0 +1,106 @@
+DOMSTOLSSTYRELSEN • AMAGERFÆLLEDVEJ 56 • 2300 KØBENHAVN S • TELEFON 7010 3322 • POST@DOMSTOLSSTYRELSEN.DK
+CVR-NR. 21659509 • EAN.NR. 5798000161184
+Integrationsguide for betaling af boafgift for F&P
+Overordnet
+Dette er en guide til hvordan F&P skal integrere til Skifteportalen ifm. udbetaling af boafgift.
+• Overordnet
+o Begreber
+• Sikkerhed
+o Adgang til resurser
+• Proces for integration og Open-Api-Specifikationer
+o Find dødsbo
+o Oplys om de begunstigede
+o Oplys om boafgiftsberegning
+o Korriger boafgiftsberegning
+o Selve boafgiftsbetalingen
+▪ BetalingsId
+• Format af PDFʼer
+o Format af “Oplysninger om de begunstigede”
+o Format af “Boafgiftsberegning”
+• Test
+o Testmiljø
+o Testdata
+• Pilotfase
+o Paralleldrift
+Begreber
+Vigtige begreber:
+Begreb Definition
+Skifteportalen IT-systemet som understøtter dødsbosager
+Dødsbosag En sag i Skifteportalen, som knytter sig til en afdød.
+Dødsbo Se dødsbosag
+2/4
+Dødsbojournal En resurse som har en 1:1-relation til en dødsbosag,
+hvorunder man finder følgende resurser:
+Krav
+Tilgodehavende
+Effektfortegnelser
+Forespørgsler
+Sikkerhed
+Sikkerheden i løsningen er magen til den som kendes fra Skifteportalen i dag. Dette er grundigt
+beskrevet i bilaget Integrationsvejledning. Her findes også information om versionering af API og
+varsling.
+Mht. at komme på testmiljøer er der en vejledning i bilaget Retningslinjer for anvendelse af
+testmiljø.
+Adgang til resurser
+Alle resurser som oprettes kan kun tilgås af opretteren og skifteretten. Dvs. at adgangsstyringen
+vil være pr. CVR- nummer.
+Der kan implementeres yderligere muligheder for at begrænse adgang til resurser på forskellig
+vis, hvis der er behov:
+• Fjerne adgang til uploadede dokumenter.
+• Mulighed for at sikre at kun udvalgte medarbejdere kan oprette og tilgå resurser.
+o F.eks. ved at benytte rollestyringen i MitID-Erhverv.
+Proces for integration og Open-Api-Specifikationer
+Når der skal betales boafgift er der overordnet følgende handlinger:
+1. Find den relevant dødsbosag
+2. Oplys om de begunstigede
+3. Oplys om boafgiftsberegning
+a. Eventuel korrigering af boafgiftsberegning
+4. Selve boafgiftsbetalingen
+3/4
+Find dødsbo
+1. Man bruger handlingen searchBo fra doedsbojournal-oas.yaml. Via dette kan man hente
+en dødsbojournal, som har et sagId. Dette er referencen til sagen.
+Oplys om de begunstigede
+1. Der uploades en PDF til Dokumentlageret med handlingen add i dokument-lager-ekstern-
+oas.yaml. Dette returnerer en reference til dokumentet.
+2. Herefter knyttes dokumentet til sagen via tilknytDokument fra doedsbo-oas.yaml.
+a. Dokumenttypen skal være OVERSIGT_OVER_BEGUNSTIGEDE.
+Oplys om boafgiftsberegning
+1. Der uploades en PDF til Dokumentlageret med handlingen add i dokument-lager-ekstern-
+oas.yaml. Dette returnerer en reference til dokumentet.
+2. Herefter knyttes dokumentet til sagen via tilknytDokument fra doedsbo-oas.yaml.
+a. Dokumenttypen skal være BOAFGIFTSBEREGNING.
+3. Der oprettes en resurse af typen boafgiftsberegning via handlingen
+opretBoafgiftsberegning. Her angives beløbet, betalingsId og reference til dokumentet på
+sagen. Beløbet er det beløb som overføres til skifteretten, ikke til arvingerne.
+4/4
+Korriger boafgiftsberegning
+Når en boafgiftsberegning skal korrigeres gøres det ved at slette den gamle og efterfølgende
+oprette en ny. Sletningen sker via handlingen sletBoafgiftsberegning.
+Selve boafgiftsbetalingen
+Selve betalingen sker via bankoverførsel uden for selve Skifteportalen. Bemærk dog
+formatkravene til betalingsId.
+BetalingsId
+Det skal sikres at betalingsIdʼer er unikke. Ydermere må betalingsIdʼer være højest 20 tegn pga.
+begrænsning af tekst ved bankoverførsler. Derfor bruges følgende format:
+Fx for et firma som har CVR 22334455
+Format af PDFʼer
+Format af “Oplysninger om de begunstigede”
+Der er ikke nogen formkrav til PDFʼen. Den læses af en sagsbehandler i skifteretten.
+Format af “Boafgiftsberegning”
+Der er ikke nogen formkrav til PDFʼen. Den læses af en sagsbehandler i skifteretten.
+Test
+Testmiljø
+Der kommer testmiljøer, hvor alle handlinger kan testes.
+Testdata
+Der bliver oprettet en række dødsboer, som kan bruges til test. Der er ikke noget til hinder for at
+oprette flere boafgiftsberegninger på disse. Da begge PDFʼer ikke læses maskinelt er det ikke
+vigtigt om de angivne personer findes i testsystemet.
+Alle testdata kommer til at være syntetiske.
+Drift
+I november 2025 tog to pilotretter - retten i Odense og retten i Helsingør - Dødsboskiftesystemet
+i brug, det er det internt vendte system.
+I maj idriftsættes Dødsboskiftesystemet til alle embeder - Skifteportalen påvirkes ikke i denne
+forbindelse.
+1 <CVR på selskab><unik alphanumerisk streng på mellem 1 og 12 tegn>
+1 22334455a123435667

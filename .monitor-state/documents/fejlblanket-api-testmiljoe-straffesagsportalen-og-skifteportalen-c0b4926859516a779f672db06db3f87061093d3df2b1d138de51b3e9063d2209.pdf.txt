@@ -1,0 +1,52 @@
+NOTAT
+DOMSTOLSSTYRELSEN • AMAGERFÆLLEDVEJ 56 • 2300 KØBENHAVN S • TELEFON 70 10 33 22 • POST@DOMSTOLSSTYRELSEN.DK
+CVR-NR. 21659509 • EAN.NR. 5798000161184
+Fejlblanket – eksternt API testmiljø
+Fejlblanketten kan anvendes til indberetning af fejl ved afprøvning af Skifteportalens og Straffesag-
+sportalens API-testmiljø.
+Vær opmærksom på ikke at skrive unødige personoplysninger ind i blanketten.
+Hvis du oplever flere fejl, så udfyld venligst en separat blanket til hver. Den første sektion bruges til
+generelle problemer med at komme på API-testmiljøet.
+Det anbefales at vedlægge skærmbilleder eller – endnu bedre – at eksportere relevante data fra
+Postman, da dette i højere grad muliggør effektiv support af vores API-brugere. Vær opmærksom
+på at fjerne følsomme oplysninger såsom adgangsnøgler (secrets) inden materialet deles.
+Total fejl i adgang til miljøet? Ja: ☐ Nej: ☐
+I hvilken portal findes fejlen? Skifteportalen:
+Dødsbobehandling: ☐
+Tvangsopløsning: ☐
+Straffesagsportalen: ☐
+Anvendt Client ID: [Client ID]
+Beskriv fejlen nærmere og
+hvilke trin der er gået forud for
+fejlens opståen.
+Evt. skærmbilleder:
+[fx fejlbesked og HTTP statuskode i authentication, hvis kaldet overhovedet kom
+igennem og er der blevet udført kald til andre API-endepunkter, før fejlen opstod]
+IP-adresse:
+Den anvendte IP-adresse skal
+være whitelistet.
+[Hvilken IP-adresse der er blevet brugt]
+2
+Beskrivelse af fejl ved API-kald:
+Overordnet beskrivelse af fejl [fx hvad består fejlen i, og hvilken type fejl er det]
+Forventning til API-kaldet [fx hvad havde jeg regnet med, at der forretningsmæssigt ville ske
+ved kaldet]
+Request header information
+Evt. skærmbilleder
+[fx skærmbilleder fra postman]
+Dato og tidspunkt for fejlens opståen [evt. omtrentligt]
+URL og indhold af evt. JSON request body
+Evt. skærmbilleder
+[faktisk JSON-indhold og skærmbilleder fra postman]
+HTTP status og response body
+Evt. skærmbilleder
+[faktisk JSON-indhold og skærmbilleder fra postman]
+Anvendt token:
+Den token der er brugt til det fejlede request.
+[token]
+Anvendt OCES3 certifikat [subject-feltet]
+Øvrige bemærkninger [andre bemærkninger]
+Kontaktoplysninger til brug for yderligere
+oplysninger
+[fx kontaktperson, tlf. og mail]
+Den udfyldte blanket sendes til ssp-api@domstolsstyrelsen.dk

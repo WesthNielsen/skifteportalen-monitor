@@ -1,0 +1,67 @@
+Ansøgning om API-adgang til Skifteportalen
+Den udfyldte formular skal fremsendes til Straffe- og skifteprogrammet via Digital Post:
+1. Vælg 'Skriv ny besked'
+2. Vælg 'Vælg myndighed'
+3. Vælg 'Statslige myndigheder'
+4. Vælg 'Domstolsstyrelsen'
+5. Vælg 'Vælg kategori'
+6. Vælg 'Domstolsstyrelsen'
+7. Vælg 'API-adgang til Skifteportalen’
+8. Udfyld 'Dit emne': 'Ansøgning om API-adgang til Skifteportalens produktionsmiljø’
+og vedhæft ansøgningen til beskeden, hvorefter den sendes.
+Direkte link til Digital Post for virksomheder:
+https://virk.dk/digitalpost/new/d7c36250-6582-47c0-8007-9dcd679a546d/91270fac-
+f527-47d2-8970-fe9504162436/
+I. Om ansøgeren
+Organisationens navn: _________________________________________________
+Organisationens CVR-nummer: __________________________________________
+Kontaktperson
+Navn_________________________________________________________________
+E-mail________________________________________________________________
+Telefonnummer________________________________________________________
+Teknisk kontaktperson
+Navn_________________________________________________________________
+E-mail________________________________________________________________
+Hvilken metode ønsker I at anvende (der kan kun vælges én af nedenstående):
+Organisationscertifikat OCES3
+Organisationscertifikat OCES3 underskrevet JWT
+2
+II. Ansøgerens forudsætning for adgang til produkti-
+onsmiljøet
+Som virksomhed skal man have testet en integration i testmiljøet, før man
+kan tage den i brug i produktionsmiljøet. Ved at markere ’ja’ til test atteste-
+res det, at man har gennemført test i testmiljøet og dermed er berettiget til
+at tilgå vores produktionsmiljø.
+Følgende sagsområder er testet af virksomheden i testmiljøet:
+Skifte af dødsboer
+Tvangsopløsning
+Forebyggende rekonstruktion
+Rekonstruktion
+Konkurs
+Gældssanering
+Ægtefælleskifte
+Andre sager efter selskabsloven (reassumption, udnævnelse af gransk-
+ningsmænd, udpegelse af vurderingsmænd og anmodning om tvangsop-
+løsning fra mindretalskapitalejere)
+a. Beskriv det produkt, der udvikles som resultat af API-adgangen samt
+anvendelsen (hvis det differentierer sig fra det anførte i ansøgning til
+API-tilslutning imod testmiljøet).
+3
+III. Tekniske tilslutningsoplysninger
+a. API-kundens udgående IP-adresser for kald til skifteportalens produkti-
+onsmiljø (fx i formen 101.102.103.104 eller 105.106.107.0/24):
+_________________________________________________________
+b. Er der behov for at anvende certifikater for andre virksomheder eller or-
+ganisationer end eget certifikat i løsningen?
+Nej
+Ja, angiv venligst grund (fx SaaS-løsning, servicefællesskab, …)
+_________________________________________________________
+IV. Vilkår for API-adgangen
+a. Domstolsstyrelsen kan tilbagekalde API-adgangen, hvis vi finder, at tilla-
+delsesindehaveren ikke længere opfylder vilkår for API-adgang til Skifte-
+portalen.
+Ja, indforstået
+Når du udfylder følgende formular, har Domstolsstyrelsen ansvaret for, at dine
+oplysninger behandles og opbevares forsvarligt – indenfor rammerne af EU’s
+databeskyttelsesforordning.
+Læs mere om Domstolsstyrelsen behandling af persondata på domstol.dk

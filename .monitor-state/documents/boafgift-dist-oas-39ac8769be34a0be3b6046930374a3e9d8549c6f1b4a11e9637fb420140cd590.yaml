@@ -1,0 +1,292 @@
+openapi: 3.0.3
+info:
+  title: Api til boafgiftsberegning.
+  description: Api til håndtering af boafgifter som ekstern.
+  version: 0.0.4
+servers:
+- url: http://localhost:8080
+paths:
+  /doedsbo/{sagId}/oversigterOverBegunstigede:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    post:
+      tags:
+      - boafgift
+      operationId: opretOversigtOverBegunstigede
+      summary: Opretter en ny oversigt over begunstigede for en given dødsbosag. Dette
+        er IKKE påkrævet. \Man kan godt nøjes med at oprette boafgiftsberegningen
+        uden at oprette en oversigt over begunstigede.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/oversigtOverBegunstigede'
+      responses:
+        '201':
+          description: Oversigt over begunstigede oprettet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/oversigtOverBegunstigede'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    get:
+      tags:
+      - boafgift
+      operationId: hentOversigterOverBegunstigede
+      summary: Henter alle oversigter over begunstigede for en given dødsbosag fra
+        den kaldende bruger.
+      responses:
+        '200':
+          description: Liste af oversigter over begunstigede.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/oversigtOverBegunstigede'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/oversigterOverBegunstigede/{oversigtOverBegunstigedeId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - name: oversigtOverBegunstigedeId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/oversigtOverBegunstigedeId'
+    get:
+      tags:
+      - boafgift
+      operationId: hentOversigtOverBegunstigede
+      summary: Henter en specifik oversigt over begunstigede.
+      responses:
+        '200':
+          description: Oversigt over begunstigede hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/oversigtOverBegunstigede'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - boafgift
+      operationId: sletOversigtOverBegunstigede
+      summary: Sletter en specifik oversigt over begunstigede.
+      responses:
+        '204':
+          description: Oversigt over begunstigede slettet.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/boafgiftsberegninger:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    get:
+      tags:
+      - boafgift
+      operationId: hentBoafgiftsberegninger
+      summary: Henter alle boafgiftsberegninger for en given dødsbosag fra den kaldende
+        bruger.
+      responses:
+        '200':
+          description: Liste af boafgiftsberegninger.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/boafgiftsberegning'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - boafgift
+      operationId: opretBoafgiftsberegning
+      summary: Opretter en ny boafgiftsberegning for en given dødsbosag.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/boafgiftsberegning'
+      responses:
+        '201':
+          description: Boafgiftsberegning oprettet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/boafgiftsberegning'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbo/{sagId}/boafgiftsberegninger/{boafgiftsberegningId}:
+    parameters:
+    - $ref: '#/components/parameters/sagId'
+    - name: boafgiftsberegningId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - boafgift
+      operationId: hentBoafgiftsberegning
+      summary: Henter en specifik boafgiftsberegning.
+      responses:
+        '200':
+          description: Boafgiftsberegning hentet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/boafgiftsberegning'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - boafgift
+      operationId: sletBoafgiftsberegning
+      summary: Sletter en specifik boafgiftsberegning.
+      responses:
+        '204':
+          description: Boafgiftsberegning slettet.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    sagId:
+      name: sagId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: UUID
+      description: Id på dødsbosag.
+  schemas:
+    oversigtOverBegunstigede:
+      required:
+      - dokumentation
+      properties:
+        id:
+          description: Id som genereres af skifteportalen, og som bruges til at identificere
+            resursen.
+          type: string
+          format: uuid
+          readOnly: true
+        dokumentation:
+          description: Pegepind til oversigt over begunstigede. Id'et refererer til
+            Id fra dokumentlageret.
+          type: string
+          format: uuid
+        oprettelsestidspunkt:
+          description: Tidspunkt for oprettelse af oversigten over begunstigede.
+          type: string
+          format: date-time
+          readOnly: true
+    boafgiftsberegning:
+      required:
+      - udbetaltBeloeb
+      - betalingId
+      - dokumentation
+      properties:
+        id:
+          description: Id som genereres af skifteportalen, og som bruges til at identificere
+            boafgiftsberegningen.
+          type: string
+          format: uuid
+          readOnly: true
+        udbetaltBeloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        betalingId:
+          description: Id for betalingen. Dette Id skal være unikt.
+          type: string
+          maxLength: 20
+        dokumentation:
+          description: Pegepind til boafgiftsberegningen. Id'et refererer til Id fra
+            dokumentlageret.
+          type: string
+          format: uuid
+        idPaaOversigtOverBegunstigede:
+          description: Id på oversigtOverBegunstigede, som man får ved oprettelse
+            gennem dette api. Ikke et \ dokumentId. Dette felt er valgfrit, da det
+            også er muligt at nøjes med boafgiftsberegningen.
+          type: string
+          format: uuid
+        oprettelsestidspunkt:
+          description: Tidspunkt for oprettelse af boafgiftsberegningen.
+          type: string
+          format: date-time
+          readOnly: true
+    oversigtOverBegunstigedeId:
+      type: string
+      format: uuid
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    positivtDecimaltal:
+      type: number
+      minimum: 0.01
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+  headers: {
+    }
+  responses:
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies: {
+    }

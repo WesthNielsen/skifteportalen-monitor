@@ -1,0 +1,595 @@
+openapi: 3.0.3
+info:
+  title: Api til retskreds.
+  description: Api til at hente adresse- og kontaktinformationer for retskredse.
+  version: 2.0.0
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  /retskredse:
+    get:
+      deprecated: true
+      tags:
+        - retskreds
+      operationId: getAllRetskredse
+      summary: Hent liste af retskredse.
+      description: Dette endpoint er deprecated. Brug v2-udgaven.
+      responses:
+        '200':
+          description: Hent information om alle retskredse.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/retskreds'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /v2/retskredse:
+    get:
+      tags:
+        - retskreds
+      operationId: getAllRetskredseV2
+      summary: Hent liste af retskredse.
+      responses:
+        '200':
+          description: Hent information om alle retskredse.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/retskredsV2'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /retskredse/{retskredsId}:
+    parameters:
+      - $ref: '#/components/parameters/retskredsParameter'
+    get:
+      deprecated: true
+      tags:
+        - retskreds
+      operationId: getRetskreds
+      summary: Hent retskreds med id.
+      description: Dette endpoint er deprecated. Brug v2-udgaven.
+      responses:
+        '200':
+          description: Information om retskreds med retskredsId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/retskreds'
+          links:
+            self:
+              operationId: hentRetskreds
+              parameters:
+                retskredsId: $request.path.retskredsId
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /v2/retskredse/{retskredsId}:
+    parameters:
+      - $ref: '#/components/parameters/retskredsParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: getRetskredsV2
+      summary: Hent retskreds med id.
+      responses:
+        '200':
+          description: Information om retskreds med retskredsId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/retskredsV2'
+          links:
+            self:
+              operationId: hentRetskreds
+              parameters:
+                retskredsId: $request.path.retskredsId
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /embeder:
+    parameters:
+      - $ref: '#/components/parameters/retskredsQueryParameter'
+      - $ref: '#/components/parameters/sagsomraadeQueryParameter'
+      - $ref: '#/components/parameters/instansniveauQueryParameter'
+    get:
+      deprecated: true
+      tags:
+        - retskreds
+      operationId: findEmbede
+      summary: Hent embedet der håndterer et givent sagsområde på et givent instansniveau for en given retskreds.
+      responses:
+        '200':
+          description: Hent information om embedet. Dette endpoint er deprecated. Brug v2-udgaven.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embede'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /v2/embeder:
+    parameters:
+      - $ref: '#/components/parameters/retskredsQueryParameter'
+      - $ref: '#/components/parameters/sagsomraadeQueryParameter'
+      - $ref: '#/components/parameters/instansniveauQueryParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: findEmbedeV2
+      summary: Hent embedet der håndterer et givent sagsområde på et givent instansniveau for en given retskreds.
+      responses:
+        '200':
+          description: Hent information om embedet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embedeV2'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /embeder/{embedskode}:
+    parameters:
+      - $ref: '#/components/parameters/embedskodeParameter'
+    get:
+      deprecated: true
+      tags:
+        - retskreds
+      operationId: getEmbede
+      summary: Hent embedet ud fra dets embedskode. Dette endpoint er deprecated. Brug v2-udgaven.
+      responses:
+        '200':
+          description: Hent information om embedet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embede'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /v2/embeder/{embedskode}:
+    parameters:
+      - $ref: '#/components/parameters/embedskodeParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: getEmbedeV2
+      summary: Hent embedet ud fra dets embedskode.
+      responses:
+        '200':
+          description: Hent information om embedet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embedeV2'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /embeder/{embedskode}/naesteInstans:
+    parameters:
+      - $ref: '#/components/parameters/embedskodeParameter'
+      - $ref: '#/components/parameters/sagsomraadeQueryParameter'
+    get:
+      deprecated: true
+      tags:
+        - retskreds
+      operationId: findNaesteInstans
+      summary: Hent embedet for næste instans ud fra dets embedskode og sagsområde. Dette endpoint er deprecated. Brug v2-udgaven.
+      responses:
+        '200':
+          description: Information om embedet for næste instans.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embede'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /v2/embeder/{embedskode}/naesteInstans:
+    parameters:
+      - $ref: '#/components/parameters/embedskodeParameter'
+      - $ref: '#/components/parameters/sagsomraadeQueryParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: findNaesteInstansV2
+      summary: Hent embedet for næste instans ud fra dets embedskode og sagsområde.
+      responses:
+        '200':
+          description: Information om embedet for næste instans.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/embedeV2'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /embeder/{embedskode}/forrigeInstanser:
+    parameters:
+      - $ref: '#/components/parameters/embedskodeParameter'
+      - $ref: '#/components/parameters/sagsomraadeQueryParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: findForrigeInstanser
+      summary: Hent liste af forrige instans embeder for det angivne embede og sagsområde.
+      responses:
+        '200':
+          description: Information om embederne for forrige instans.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/embede'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /arrester:
+    get:
+      tags:
+        - retskreds
+      operationId: hentArrester
+      summary: Hent informationer om alle arrester.
+      responses:
+        '200':
+          description: Information om arrester hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/arrest'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+
+  /arrester/{arrestkode}:
+    parameters:
+      - $ref: '#/components/parameters/arrestkodeParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: hentArrest
+      summary: Hent informationer om specifik arrest ud fra dets arrestkode.
+      responses:
+        '200':
+          description: Information om arresten hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/arrest'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /politikredse:
+    parameters:
+      - $ref: '#/components/parameters/landsretQueryParameter'
+      - $ref: '#/components/parameters/politikredstypeQueryParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: hentPolitikredse
+      summary: Hent informationer om alle politikredse der passer en evt. filtreret søgning.
+      responses:
+        '200':
+          description: Information om politikredse hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/politikreds'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /politikredse/{politikredskode}:
+    parameters:
+      - $ref: '#/components/parameters/politikredskodeParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: hentPolitikreds
+      summary: Hent informationer om specifik politikreds ud fra dets politikredskode.
+      responses:
+        '200':
+          description: Information om politikredsen hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/politikreds'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+  /statsadvokaturer:
+    parameters:
+      - $ref: '#/components/parameters/landsretQueryParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: hentStatsadvokaturer
+      summary: Hent informationer om alle statsadvokaturer der passer en evt. filtreret søgning.
+      responses:
+        '200':
+          description: Information om statsadvokaturer hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/statsadvokatur'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+  /statsadvokaturer/{statsadvokaturkode}:
+    parameters:
+      - $ref: '#/components/parameters/statsadvokaturkodeParameter'
+    get:
+      tags:
+        - retskreds
+      operationId: hentStatsadvokatur
+      summary: Hent informationer om specifik statsadvokatur ud fra dets statsadvokaturkode.
+      responses:
+        '200':
+          description: Information om statsadvokaturet hentet succesfuldt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statsadvokatur'
+        default:
+          $ref: './imported/apiErrors/apiErrors.yaml#/components/responses/genericErrorResponse'
+
+security:
+  - bearerAuth: [ ]
+
+components:
+  parameters:
+    retskredsParameter:
+      name: retskredsId
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/retskredsId'
+      description: Id på retskredsen.
+    embedskodeParameter:
+      name: embedskode
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/embedskode'
+      description: Id på retskredsen.
+    arrestkodeParameter:
+      name: arrestkode
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/arrestkode'
+      description: Unik kode for arresten.
+    politikredskodeParameter:
+      name: politikredskode
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 01 eller DUP
+      description: Unik kode for politikredsen.
+    statsadvokaturkodeParameter:
+      name: statsadvokaturkode
+      in: path
+      required: true
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/statsadvokaturkode'
+      description: Unik kode for statsadvokaturet.
+    landsretQueryParameter:
+      name: landsret
+      in: query
+      required: false
+      description: Angiver Landsret kontekst, så de returnerede værdier kun er dem der er relevante for den angivne Landsret.
+      schema:
+        $ref: '#/components/schemas/landsretEmbeder'
+    politikredstypeQueryParameter:
+      name: politikredstype
+      in: query
+      required: false
+      description: Angiver hvilke politikredse, der ønskes returneret. Hvis ikke angivet, så vælges ALLE.
+      schema:
+        $ref: '#/components/schemas/politikredstype'
+    retskredsQueryParameter:
+      name: retskredsId
+      in: query
+      required: true
+      description: Id på retskreds hvor hændelsen er relateret til.
+      schema:
+        $ref: './imported/typer/typer.yaml#/components/schemas/retskredsId'
+    sagsomraadeQueryParameter:
+      name: sagsomraade
+      in: query
+      required: true
+      description: Sagsområde som hændelsen falder under.
+      schema:
+        $ref: '#/components/schemas/sagsomraadeEnum'
+    instansniveauQueryParameter:
+      name: instansniveau
+      in: query
+      required: true
+      description: Instansniveau som embedet skal dække. Hvis ikke specificeret anvendes 1 som default.
+      schema:
+        $ref: '#/components/schemas/instansniveauEnum'
+
+  securitySchemes:
+    bearerAuth: # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    retskredsCommon:
+      properties:
+        id:
+          $ref: './imported/typer/typer.yaml#/components/schemas/retskredsId'
+        navn:
+          type: string
+        telefonnummer:
+          $ref: './imported/typer/typer.yaml#/components/schemas/telefonnummer'
+        hovedEmail:
+          $ref: './imported/typer/typer.yaml#/components/schemas/email'
+        skifteEmail:
+          $ref: './imported/typer/typer.yaml#/components/schemas/email'
+        embedskode:
+          $ref: './imported/typer/typer.yaml#/components/schemas/embedskode'
+        cvr:
+          $ref: './imported/typer/typer.yaml#/components/schemas/cvrNummer'
+        kontonummer:
+          $ref: './imported/typer/typer.yaml#/components/schemas/kontonummer'
+        bank:
+          description: Navnet på retskredsens bank.
+          type: string
+          example: Danske Bank
+    retskreds:
+      x-copy-properties-from:
+        - $ref: '#/components/schemas/retskredsCommon'
+      properties:
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/danskAdresse'
+    retskredsV2:
+      x-copy-properties-from:
+        - $ref: '#/components/schemas/retskredsCommon'
+      properties:
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/adresse'
+    embedeCommon:
+      properties:
+        embedskode:
+          $ref: './imported/typer/typer.yaml#/components/schemas/embedskode'
+        navn:
+          type: string
+        hovedTelefonnummer:
+          $ref: './imported/typer/typer.yaml#/components/schemas/telefonnummer'
+        hovedEmail:
+          $ref: './imported/typer/typer.yaml#/components/schemas/email'
+        sagsomraadeKontaktoplysninger:
+          $ref: '#/components/schemas/sagsomraadeKontaktoplysninger'
+        cvr:
+          $ref: './imported/typer/typer.yaml#/components/schemas/cvrNummer'
+        kontonummer:
+          $ref: './imported/typer/typer.yaml#/components/schemas/kontonummer'
+        bank:
+          description: Navnet på embedets bank.
+          type: string
+          example: Danske Bank
+    embede:
+      x-copy-properties-from:
+        - $ref: '#/components/schemas/embedeCommon'
+      properties:
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/danskAdresse'
+    embedeV2:
+      x-copy-properties-from:
+        - $ref: '#/components/schemas/embedeCommon'
+      properties:
+        retskredsId:
+          $ref: './imported/typer/typer.yaml#/components/schemas/retskredsId'
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/adresse'
+    sagsomraadeEnum:
+      type: string
+      enum:
+        - SKIFTE
+        - STRAFFE
+        - INSOLVENS
+        - BOEDE
+    instansniveauEnum:
+      type: string
+      enum:
+        - INSTANSNIVEAU_1
+        - INSTANSNIVEAU_2
+        - INSTANSNIVEAU_3
+    sagsomraadeKontaktoplysninger:
+      description: Liste med kontaktoplysninger for hvert sagsområde der håndteres af embede.
+      type: array
+      items:
+        $ref: '#/components/schemas/kontaktoplysningerForSagsomraade'
+    kontaktoplysningerForSagsomraade:
+      description: Kontaktoplysninger for et sagsområde håndteret af embedet.
+      required:
+        - sagsomraade
+        - email
+      properties:
+        sagsomraade:
+          $ref: '#/components/schemas/sagsomraadeEnum'
+        email:
+          $ref: './imported/typer/typer.yaml#/components/schemas/email'
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/danskAdresse'
+        telefonnummer:
+          $ref: './imported/typer/typer.yaml#/components/schemas/telefonnummer'
+        aabningstid:
+          type: string
+          description: Åbningstiden hvor embedet kan kontaktes.
+          example: '8.30-15.00'
+        navn:
+          type: string
+    arrest:
+      required:
+        - arrestkode
+        - navn
+      properties:
+        arrestkode:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/arrestkode'
+        navn:
+          type: string
+          example: Assens Arrest
+    saerligPolitikredskode:
+      description: Særlige politikredse som ikke opretholder samme formatkrav til journalnumre eller reelt politikreds-område.
+      type: string
+      enum:
+        - NSK # National enhed for Særlig Kriminalitet"
+        - FAUK # Forsvarets Auditørkorps"
+        - DUP # Den Uafhængige Politiklagemyndighed"
+    politikreds:
+      description: Angiver detaljer for politikreds. Afhængig af typen angives kun politikredskode eller særlig politikredskode.
+      properties:
+        type:
+          $ref: '#/components/schemas/politikredstype'
+        politikredskode:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/politikredskode'
+        saerligPolitikredskode:
+          $ref: '#/components/schemas/saerligPolitikredskode'
+        navn:
+          type: string
+          example: Københavns Politi
+        telefonnummer:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/telefonnummer'
+        email:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/email'
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/adresse'
+      required:
+        - type
+        - navn
+        - telefonnummer
+        - email
+        - adresse
+    statsadvokatur:
+      properties:
+        statsadvokaturkode:
+            $ref: './imported/typer/typer.yaml/#/components/schemas/statsadvokaturkode'
+        navn:
+          type: string
+          example: Statsadvokaten i Viborg
+        telefonnummer:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/telefonnummer'
+        email:
+          $ref: './imported/typer/typer.yaml/#/components/schemas/email'
+        adresse:
+          $ref: './imported/adresser/adresser.yaml#/components/schemas/adresse'
+      required:
+        - statsadvokaturkode
+        - navn
+        - telefonnummer
+        - email
+        - adresse
+    landsretEmbeder:
+      type: string
+      enum:
+          - OLR
+          - VLR
+    politikredstype:
+      type: string
+      enum:
+        - GEOGRAFISK_POLITIKREDS
+        - SAERLIG_POLITIKREDS
+        - ALLE

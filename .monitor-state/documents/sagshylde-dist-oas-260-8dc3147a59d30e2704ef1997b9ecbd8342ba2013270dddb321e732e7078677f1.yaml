@@ -1,0 +1,331 @@
+openapi: 3.0.3
+info:
+  title: Api til at hente aggregerede sager tværs af sagstyper.
+  description: Api til at hente aggregerede sager på tværs af sagstyper.
+  version: 2.6.0
+servers:
+- url: http://localhost:8080
+paths:
+  /sager:
+    get:
+      tags:
+      - sagshylde
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      - $ref: '#/components/parameters/lovomraadeEkstern'
+      operationId: hentSager
+      description: Henter alle sager som den indloggede bruger har en relation til.
+      responses:
+        '200':
+          description: Sager hentet med succes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagListItem'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+    post:
+      tags:
+      - sagshylde
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      - $ref: '#/components/parameters/lovomraadeEkstern'
+      operationId: soegSager
+      description: Henter alle sager (ud fra søgekriterier). OBS Uden relation til
+        en sag skal den fremsøges unikt for at blive returneret.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sagQueryEkstern'
+      responses:
+        '200':
+          description: Sager fundet udfra fra søgekriterier.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/sagListItem'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+security:
+- bearerAuth: [
+    ]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    lovomraadeEkstern:
+      name: lovomraade
+      description: Lovområde for den eksterne portal (minskiftesag.dk eller straffesagsportalen.dk).
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/lovomraadeEksternEnum'
+    page:
+      name: page
+      description: Side for paginering.
+      required: false
+      in: query
+      schema:
+        type: integer
+    size:
+      name: size
+      description: Antal elementer pr. side.
+      required: false
+      in: query
+      schema:
+        type: integer
+    sort:
+      name: sort
+      description: Liste af felter der skal sorteres på.
+      required: false
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+    direction:
+      name: direction
+      description: Stigende eller faldende retning for søgeresultater.
+      in: query
+      schema:
+        $ref: '#/components/schemas/directionEnum'
+  schemas:
+    sagQueryEkstern:
+      properties:
+        sagsnummer:
+          description: Søgning på sagens sagsnummer.
+          example: TV-1001-23/ROS
+          $ref: '#/components/schemas/sagsnummer'
+        part:
+          description: Søgning på den centrale part i sagen, fx selskabet under tvang
+            eller den tiltalte person.
+          $ref: '#/components/schemas/deltager'
+        politietsJournalnummer:
+          description: Søgning på politiets journalnummer (eksakt match).
+          type: string
+        loebenummer:
+          description: Søgning på rettens løbenummer.
+          type: string
+          pattern: ^\d{1,6}$
+        aarstal:
+          description: Søgning på årstal for rettens sagsnummer (4 cifre).
+          type: string
+          pattern: ^\d{4}$
+        afdoedSagQueryEkstern:
+          description: Søgning på afdøde.
+          $ref: '#/components/schemas/afdoedSagQueryEkstern'
+    sagListItem:
+      required:
+      - id
+      - sagstype
+      - embedskode
+      - roller
+      properties:
+        id:
+          description: Sagens tekniske id, som en reference til sagId ved fremsøgning
+            af den specifikke sag.
+          $ref: '#/components/schemas/id'
+        sagstype:
+          $ref: '#/components/schemas/sagstypeEnum'
+        embedskode:
+          $ref: '#/components/schemas/embedskode'
+        embedsNavn:
+          type: string
+        roller:
+          description: Rolle i/relation til en sag.
+          example: Likvidator eller Kreditor i en tvangsopløsningssag.
+          type: array
+          items:
+            type: string
+        partId:
+          description: Identifikation af centralt part under behandling, f.eks. cvr
+            på selskab under tvangsopløsning eller cpr på tiltalte i en straffesag.
+          type: string
+        partNavn:
+          description: Navn på central part under behandling, f.eks. navn på selskabet
+            der er under tvangsopløsning elle den tiltalte i en straffesag.
+          type: string
+        erPartNAB:
+          description: Angiver om den centrale part er NAB (Navn og Adressebeskyttet).
+          type: boolean
+        sagsinformation:
+          $ref: '#/components/schemas/tableElement'
+        sagsnummer:
+          $ref: '#/components/schemas/tableElement'
+        datoer:
+          $ref: '#/components/schemas/tableElement'
+        sagsstatus:
+          type: string
+        loginRelation:
+          type: string
+    deltager:
+      properties:
+        navn:
+          type: string
+        foedselsdato:
+          type: string
+          format: date
+        cpr:
+          $ref: '#/components/schemas/cprNummer'
+        cvr:
+          $ref: '#/components/schemas/cvrNummer'
+    tableElement:
+      properties:
+        linje1:
+          type: string
+        linje2:
+          type: string
+    lovomraadeEksternEnum:
+      description: Angivelse af søgeområde (svarende til valg imellem eksterne portaler).
+      type: string
+      enum:
+      - SKIFTERET
+      - STRAFFERET
+    afdoedSagQueryEkstern:
+      type: object
+      description: Søgekriterier, hvor enten CPR-nummer eller både navn og DAR-adresse-id
+        skal angives.
+      properties:
+        cprNummer:
+          description: Afdødes CPR-nummer.
+          $ref: '#/components/schemas/cprNummer'
+        navn:
+          description: Navn på afdøde. Mindst eet korrekt fornavn efterfulgt af afdødes
+            efternavn.
+          type: string
+          maxLength: 200
+          pattern: .+ .+
+        darId:
+          description: Unikt DAR-id for afdødes adresse.
+          type: string
+          format: uuid
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    id:
+      type: string
+      format: uuid
+    cprNummer:
+      type: string
+      pattern: ^\d{10}$
+    cvrNummer:
+      type: string
+      pattern: ^[1-9][0-9]{7}$
+    embedskode:
+      description: Unik forkortelse for et givent embede, der kan anvendes til identificering
+        af et specifik embede i retskreds-service.
+      type: string
+      pattern: ^[A-ZÆØÅ]{3}$
+      maxLength: 3
+      minLength: 3
+    sagstypeEnum:
+      x-namespace: dk.domstol.oas.common
+      description: Type af sag.
+      type: string
+      enum:
+      - BOEDESAG
+      - STRAFFESAG
+      - DOEDSBO
+      - DOEDSBOJOURNAL
+      - TVANGSOPLOESNING
+      - KONKURS
+      - GAELDSSANERING
+      - REKONSTRUKTION
+      - FOREBYGGENDE_REKONSTRUKTION
+      - AEGTEFAELLESKIFTE
+      - ANDRE_SAGER_EFTER_SELSKABSLOVEN
+      - LANDSRET_BEVIS_MED_DOMSMAEND_ANKE
+      - LANDSRET_BEVIS_UDEN_DOMSMAEND_ANKE
+      - LANDSRET_BEVIS_MED_NAEVNINGE_ANKE
+      - LANDSRET_UDMAALING_MED_DOMSMAEND_ANKE
+      - LANDSRET_UDMAALING_UDEN_DOMSMAEND_ANKE
+      - LANDSRET_FAENGSLING_KAERE
+      - LANDSRET_STRAFFE_KAERE
+      - LANDSRET_DOEDSBO_KAERE
+      - LANDSRET_TVANGSOPLOESNING_KAERE
+      - LANDSRET_KONKURS_KAERE
+      - LANDSRET_GAELDSSANERING_KAERE
+      - LANDSRET_AEGTEFAELLESKIFTE_KAERE
+      - LANDSRET_REKONSTRUKTION_KAERE
+      - LANDSRET_FOREBYGGENDE_REKONSTRUKTION_KAERE
+      - LANDSRET_ANDRE_SAGSTYPER_EFTER_SELSKABSLOVEN_KAERE
+      - HOEJESTERET_STRAFFE_KAERE
+      - HOEJESTERET_STRAFFE_ANKE
+      - HOEJESTERET_ANDRAGENDE
+      - BILAGSSAG
+    sagsnummer:
+      type: string
+      maxLength: 255
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+  headers:
+    totalCount:
+      description: Det totale antal resultater i listen.
+      schema:
+        type: integer
+  responses: {
+    }
+  requestBodies: {
+    }
