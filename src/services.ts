@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { request, retryDelay, sleep } from "./http.ts";
 import type { Fetch, Sleep } from "./http.ts";
@@ -14,6 +15,14 @@ export interface Config {
 const STATE_BRANCH = "monitor-state";
 const STATE_PATH = ".monitor-state/snapshot.json";
 const MAX_SNAPSHOT_BYTES = 900 * 1024;
+const MAX_DOCUMENT_TEXT_BYTES = 15 * 1024 * 1024;
+
+function documentPath(url: string, type: "pdf" | "yaml"): string {
+  const id = createHash("sha256").update(url).digest("hex");
+  const name = (new URL(url).pathname.split("/").pop() || "document")
+    .replace(/\.(pdf|ya?ml)$/iu, "").replace(/[^a-z0-9._-]/giu, "_").slice(0, 100) || "document";
+  return `.monitor-state/documents/${name}-${id}.${type === "pdf" ? "pdf.txt" : "yaml"}`;
+}
 
 function githubErrorDetails(body: Buffer, token: string): string | undefined {
   let raw: unknown;
@@ -58,17 +67,20 @@ export function createStore(config: Config, fetcher: Fetch = globalThis.fetch): 
   const apiUrl = `https://api.github.com/repos/${config.githubRepository}`;
   const stateUrl = `${apiUrl}/contents/${STATE_PATH}`;
   const stateRefUrl = `${apiUrl}/git/ref/heads/${STATE_BRANCH}`;
+  let loadedHead: string | null = null;
+  let loadedFiles = new Map<string, string>();
 
   async function send(
     url: string,
-    method: "GET" | "POST" | "PUT",
+    method: "GET" | "POST" | "PATCH",
     body?: string,
+    raw = false,
   ) {
     return request(url, {
       method,
       headers: {
         Authorization: "Bearer " + config.githubToken,
-        Accept: "application/vnd.github+json",
+        Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       },
@@ -95,8 +107,8 @@ export function createStore(config: Config, fetcher: Fetch = globalThis.fetch): 
     return parsed.data;
   }
 
-  async function getStateFile() {
-    const response = await send(`${stateUrl}?ref=${STATE_BRANCH}`, "GET");
+  async function getStateFile(ref: string) {
+    const response = await send(`${stateUrl}?ref=${ref}`, "GET");
     if (response.status === 404) return null;
     let raw: unknown;
     try {
@@ -113,41 +125,143 @@ export function createStore(config: Config, fetcher: Fetch = globalThis.fetch): 
     return file.data;
   }
 
-  async function ensureStateBranch(): Promise<void> {
-    const response = await send(stateRefUrl, "GET");
-    if (response.status !== 404) return;
-    const created = await send(`${apiUrl}/git/refs`, "POST", JSON.stringify({
-      ref: `refs/heads/${STATE_BRANCH}`,
-      sha: config.baseSha,
-    }));
-    if (created.status !== 201) {
-      throw new Error("GitHub did not acknowledge the state branch creation");
+  function parseSha(body: Buffer, description: string): string {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(body.toString("utf8"));
+    } catch {
+      throw new Error(`GitHub returned an invalid ${description} response`);
     }
+    const parsed = z.object({ sha: z.string().min(1) }).safeParse(raw);
+    if (!parsed.success) throw new Error(`GitHub returned an invalid ${description} response`);
+    return parsed.data.sha;
+  }
+
+  async function getHead(): Promise<string | null> {
+    const response = await send(stateRefUrl, "GET");
+    if (response.status === 404) return null;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(response.body.toString("utf8"));
+    } catch {
+      throw new Error("GitHub returned an invalid state branch response");
+    }
+    const parsed = z.object({ object: z.object({ sha: z.string().min(1) }) }).safeParse(raw);
+    if (!parsed.success) throw new Error("GitHub returned an invalid state branch response");
+    return parsed.data.object.sha;
   }
 
   return {
     async load() {
-      const file = await getStateFile();
+      loadedFiles = new Map();
+      loadedHead = await getHead();
+      if (!loadedHead) return null;
+      const file = await getStateFile(loadedHead);
       if (!file) return null;
       const value = Buffer.from(file.content.replace(/\s/gu, ""), "base64").toString("utf8");
-      return parseSnapshot(value);
+      const snapshot = parseSnapshot(value);
+      const resources: Snapshot["resources"] = [];
+      for (const { pdfTextStored, yamlTextStored, ...resource } of snapshot.resources) {
+        let pdfText = resource.pdfText;
+        let yamlText = resource.yamlText;
+        for (const type of ["pdf", "yaml"] as const) {
+          if (!(type === "pdf" ? pdfTextStored : yamlTextStored)) continue;
+          const path = documentPath(resource.url, type);
+          const response = await send(`${apiUrl}/contents/${path}?ref=${loadedHead}`, "GET", undefined, true);
+          if (response.status !== 200) throw new Error(`Stored document text is missing: ${path}`);
+          if (type === "yaml" && createHash("sha256").update(response.body).digest("hex") !== resource.hash) {
+            throw new Error(`Stored YAML text does not match its hash: ${path}`);
+          }
+          let text: string;
+          try {
+            text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(response.body);
+          } catch {
+            throw new Error(`Stored document text is not valid UTF-8: ${path}`);
+          }
+          loadedFiles.set(path, text);
+          if (type === "pdf") pdfText = text;
+          else yamlText = text;
+        }
+        resources.push({
+          ...resource,
+          ...(pdfText === undefined ? {} : { pdfText }),
+          ...(yamlText === undefined ? {} : { yamlText }),
+        });
+      }
+      return { ...snapshot, resources };
     },
     async save(snapshot: Snapshot) {
-      const value = JSON.stringify(snapshot);
+      const files = new Map<string, string>();
+      const resources = snapshot.resources.map(({ pdfText, yamlText, pdfTextStored: _pdfStored,
+        yamlTextStored: _yamlStored, ...resource }) => {
+        if (pdfText !== undefined) files.set(documentPath(resource.url, "pdf"), pdfText);
+        if (yamlText !== undefined) {
+          if (createHash("sha256").update(yamlText, "utf8").digest("hex") !== resource.hash) {
+            throw new Error(`YAML text does not match the document hash: ${resource.url}`);
+          }
+          files.set(documentPath(resource.url, "yaml"), yamlText);
+        }
+        return {
+          ...resource,
+          ...(pdfText === undefined ? {} : { pdfTextStored: true as const }),
+          ...(yamlText === undefined ? {} : { yamlTextStored: true as const }),
+        };
+      });
+      const value = JSON.stringify({ ...snapshot, resources });
       if (Buffer.byteLength(value, "utf8") > MAX_SNAPSHOT_BYTES) {
         throw new Error("Monitor snapshot exceeds the GitHub contents API file size limit");
       }
-      await ensureStateBranch();
-      const current = await getStateFile();
-      const saved = await send(stateUrl, "PUT", JSON.stringify({
-        message: `Update monitor baseline (${snapshot.checkedAt})`,
-        content: Buffer.from(value, "utf8").toString("base64"),
-        branch: STATE_BRANCH,
-        ...(current ? { sha: current.sha } : {}),
-      }));
-      if (saved.status !== 200 && saved.status !== 201) {
-        throw new Error("GitHub did not acknowledge the state snapshot write");
+      for (const [path, text] of files) {
+        if (Buffer.byteLength(text, "utf8") > MAX_DOCUMENT_TEXT_BYTES) {
+          throw new Error(`Document text exceeds the 15 MiB storage limit: ${path}`);
+        }
       }
+      let head = await getHead();
+      if (head !== loadedHead) throw new Error("State branch changed since it was loaded; baseline was not advanced");
+      if (!head) {
+        const created = await send(`${apiUrl}/git/refs`, "POST", JSON.stringify({
+          ref: `refs/heads/${STATE_BRANCH}`,
+          sha: config.baseSha,
+        }));
+        if (created.status !== 201) throw new Error("GitHub did not acknowledge the state branch creation");
+        head = config.baseSha;
+      }
+      const commit = await send(`${apiUrl}/git/commits/${head}`, "GET");
+      let commitData: unknown;
+      try {
+        commitData = JSON.parse(commit.body.toString("utf8"));
+      } catch {
+        throw new Error("GitHub returned an invalid state commit response");
+      }
+      const commitParsed = z.object({ tree: z.object({ sha: z.string().min(1) }) }).safeParse(commitData);
+      if (!commitParsed.success) throw new Error("GitHub returned an invalid state commit response");
+      const tree = [
+        { path: STATE_PATH, mode: "100644", type: "blob", content: value },
+        ...[...files].filter(([path, text]) => loadedFiles.get(path) !== text)
+          .map(([path, content]) => ({ path, mode: "100644", type: "blob", content })),
+        ...[...loadedFiles.keys()].filter((path) => !files.has(path))
+          .map((path) => ({ path, mode: "100644", type: "blob", sha: null })),
+      ];
+      const createdTree = await send(`${apiUrl}/git/trees`, "POST", JSON.stringify({
+        base_tree: commitParsed.data.tree.sha,
+        tree,
+      }));
+      if (createdTree.status !== 201) throw new Error("GitHub did not acknowledge the state tree creation");
+      const treeSha = parseSha(createdTree.body, "state tree");
+      const createdCommit = await send(`${apiUrl}/git/commits`, "POST", JSON.stringify({
+        message: `Update monitor baseline (${snapshot.checkedAt})`,
+        tree: treeSha,
+        parents: [head],
+      }));
+      if (createdCommit.status !== 201) throw new Error("GitHub did not acknowledge the state commit creation");
+      const commitSha = parseSha(createdCommit.body, "state commit");
+      const updated = await send(`${apiUrl}/git/refs/heads/${STATE_BRANCH}`, "PATCH", JSON.stringify({
+        sha: commitSha,
+        force: false,
+      }));
+      if (updated.status !== 200) throw new Error("GitHub did not acknowledge the state branch update");
+      loadedHead = commitSha;
+      loadedFiles = files;
     },
   };
 }

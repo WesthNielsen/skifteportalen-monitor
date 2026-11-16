@@ -113,6 +113,32 @@ test("rejects HTML masquerading as a successful spec download", async () => {
       new Response("<!doctype html><html>Maintenance</html>")), /HTML response/u);
 });
 
+test("collects YAML text and reports changed lines with indentation preserved", async () => {
+  let yaml = "openapi: 3.0.0\ninfo:\n  version: 1.0.0\n";
+  const collect = () => collectSnapshot(async (input) =>
+    String(input) === SOURCE_URL ? new Response(page()) : new Response(yaml));
+  const first = await collect();
+  assert.equal(first.resources[0]?.yamlText, yaml);
+  const legacy: Snapshot = {
+    ...first,
+    resources: first.resources.map(({ yamlText: _yamlText, ...resource }) => resource),
+  };
+  assert.deepEqual(describeChanges(legacy, first), []);
+  yaml = "openapi: 3.0.0\ninfo:\n  version: 2.0.0\n";
+  const second = await collect();
+  const changes = describeChanges(first, second).join("\n");
+  assert.match(changes, /YAML text changes/u);
+  assert.match(changes, /-   version: 1\.0\.0/u);
+  assert.match(changes, /\+   version: 2\.0\.0/u);
+  assert.match(describeChanges(legacy, second).join("\n"), /YAML text diff unavailable/u);
+});
+
+test("rejects invalid UTF-8 YAML rather than saving a lossy baseline", async () => {
+  await assert.rejects(collectSnapshot(async (input) =>
+    String(input) === SOURCE_URL ? new Response(page()) : new Response(new Uint8Array([0xff]))),
+  /YAML is not valid UTF-8/u);
+});
+
 test("collects PDF text and reports changed text after upgrading a hash-only baseline", async () => {
   let version = "Old access instructions";
   const collect = () => collectSnapshot(async (input) => {

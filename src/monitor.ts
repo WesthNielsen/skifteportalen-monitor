@@ -105,11 +105,21 @@ export async function collectSnapshot(fetcher: Fetch = globalThis.fetch): Promis
       /^application\/pdf(?:\s*;|$)/iu.test(result.headers.get("content-type") ?? "") ||
       result.body.subarray(0, 5).toString("ascii") === "%PDF-"
     );
+    const isYaml = result.status === 200 && !isPdf && /\.ya?ml$/iu.test(new URL(link.url).pathname);
+    let yamlText: string | undefined;
+    if (isYaml) {
+      try {
+        yamlText = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(result.body);
+      } catch {
+        throw new Error(`Document ${link.url}: YAML is not valid UTF-8`);
+      }
+    }
     resources.push({
       ...link,
       status: result.status,
       hash: result.status === 200 ? hash(result.body) : null,
       ...(isPdf ? { pdfText: await extractPdfText(result.body, link.url) } : {}),
+      ...(yamlText === undefined ? {} : { yamlText }),
     });
   }
   return {
@@ -122,11 +132,13 @@ export async function collectSnapshot(fetcher: Fetch = globalThis.fetch): Promis
 }
 
 function changedLines(before: string, after: string, moreInfo: string): string[] {
-  const excerpts = diffLines(`${before}\n`, `${after}\n`)
+  const excerpts = diffLines(before, after)
     .filter((part) => part.added || part.removed)
-    .flatMap((part) => part.value.trim().split("\n").map((line) =>
-      `${part.added ? "+" : "-"} ${line}`,
-    ));
+    .flatMap((part) => {
+      const lines = part.value.split(/\r?\n/u);
+      if (lines.at(-1) === "") lines.pop();
+      return lines.map((line) => `${part.added ? "+" : "-"} ${line}`);
+    });
   const lines = excerpts.slice(0, 24).map((line) =>
     line.length > 700 ? `${line.slice(0, 697)}...` : line,
   );
@@ -159,6 +171,17 @@ export function describeChanges(previous: Snapshot, current: Snapshot): string[]
         } else {
           changes.push("PDF text changes (- old, + new):", ...changedLines(
             old.pdfText, resource.pdfText, "Compare saved PDF text in the monitor-state branch history.",
+          ));
+        }
+      }
+      if (old.yamlText !== undefined || resource.yamlText !== undefined) {
+        if (old.yamlText === undefined || resource.yamlText === undefined) {
+          changes.push("YAML text diff unavailable: the previous or current version has no saved YAML text.");
+        } else if (old.yamlText === resource.yamlText) {
+          changes.push("No YAML text changed despite the byte-level change.");
+        } else {
+          changes.push("YAML text changes (- old, + new):", ...changedLines(
+            old.yamlText, resource.yamlText, "Compare saved YAML files in the monitor-state branch history.",
           ));
         }
       }

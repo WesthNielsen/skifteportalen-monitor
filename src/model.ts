@@ -9,9 +9,15 @@ const resourceSchema = z.object({
   status: z.union([z.literal(200), z.literal(404), z.literal(410)]),
   hash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
   pdfText: z.string().optional(),
+  yamlText: z.string().optional(),
+  pdfTextStored: z.literal(true).optional(),
+  yamlTextStored: z.literal(true).optional(),
 }).refine((resource) =>
   (resource.status === 200) === (resource.hash !== null) &&
-  (resource.pdfText === undefined || resource.status === 200),
+  ((resource.pdfText === undefined && resource.yamlText === undefined &&
+    resource.pdfTextStored === undefined && resource.yamlTextStored === undefined) || resource.status === 200) &&
+  !(resource.pdfText !== undefined && resource.pdfTextStored) &&
+  !(resource.yamlText !== undefined && resource.yamlTextStored),
 );
 
 export const snapshotSchema = z.object({
