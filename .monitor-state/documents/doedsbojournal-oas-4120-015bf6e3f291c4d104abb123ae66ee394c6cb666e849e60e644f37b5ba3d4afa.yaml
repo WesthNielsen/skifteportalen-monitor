@@ -1,0 +1,2880 @@
+openapi: 3.0.3
+info:
+  title: Api til dødsbojournaler
+  description: Api til at anmelde, opdatere, slette og vise krav, tilgodehavender,
+    forespørgsler og effektfortegnelser for en dødsbojournal.
+  version: 4.12.0
+servers:
+- url: https://api.domstol.dk
+- url: https://api.test-minskiftesag.net
+paths:
+  /doedsbojournaler:
+    post:
+      summary: Hent liste af dødsbojournaler.
+      description: Dette kald giver mulighed for at fremsøge en dødbojournaler baseret
+        på enten CPR-nr. eller navn og adresse.
+      tags:
+      - doedsbojournal
+      operationId: searchBo
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalQuery'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som lever op til kriterierne.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournal'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler:
+    post:
+      summary: Hent liste af dødsbojournaler.
+      description: Dette kald giver mulighed for at fremsøge en dødbojournaler baseret
+        på enten CPR-nr. eller navn og adresse.
+      tags:
+      - doedsbojournal
+      operationId: searchBoV2
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/direction'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalQuery'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som lever op til kriterierne.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournalV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/aendringer:
+    post:
+      summary: Hent liste af ændrede dødsbojournaler.
+      description: Dette kald giver mulighed for at fremsøge dødsbojournaler som er
+        ændret siden | et angivet tidspunkt. I praksis foregår det ved at der sendes
+        en liste af doedsbojournalId'er samt et | et tidspunkt. Svaret er en liste
+        af dødsbojournaler som er ændret siden det angivne tidspunkt.
+      tags:
+      - doedsbojournal
+      operationId: findChangedSince
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalAendringer'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som er ændret fra den angivne dato
+            og frem.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournal'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/aendringer:
+    post:
+      summary: Hent liste af ændrede dødsbojournaler.
+      description: Dette kald giver mulighed for at fremsøge dødsbojournaler som er
+        ændret siden | et angivet tidspunkt. I praksis foregår det ved at der sendes
+        en liste af doedsbojournalId'er samt et | et tidspunkt. Svaret er en liste
+        af dødsbojournaler som er ændret siden det angivne tidspunkt.
+      tags:
+      - doedsbojournal
+      operationId: findChangedSinceV2
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalAendringer'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som er ændret fra den angivne dato
+            og frem.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournalV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/aendringerKontaktperson:
+    post:
+      summary: Hent liste af ændrede dødsbojournaler som kontaktperson.
+      description: Dette kald giver mulighed for at fremsøge dødsbojournaler, som
+        brugeren selv er kontaktperson for | eller bobehandler på. Svaret er en liste
+        af dødsbojournaler som er ændret | siden det angivne tidspunkt.
+      tags:
+      - doedsbojournal
+      operationId: findChangedSinceForKontaktperson
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalAendringerKontaktperson'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som er ændret fra den angivne dato
+            og frem.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournal'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/aendringerKontaktperson:
+    post:
+      summary: Hent liste af ændrede dødsbojournaler som kontaktperson.
+      description: Dette kald giver mulighed for at fremsøge dødsbojournaler, som
+        brugeren selv er kontaktperson for | eller bobehandler på. Svaret er en liste
+        af dødsbojournaler som er ændret | siden det angivne tidspunkt.
+      tags:
+      - doedsbojournal
+      operationId: findChangedSinceForKontaktpersonV2
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/doedsbojournalAendringerKontaktperson'
+      responses:
+        '200':
+          description: Liste af dødsbojournaler som er ændret fra den angivne dato
+            og frem.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/doedsbojournalV2'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/totalCount'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/registreringer:
+    post:
+      summary: Hent liste af registering id'er tilhørende indberetter.
+      operationId: getRegistreringIdList
+      tags:
+      - doedsbojournal
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      requestBody:
+        required: true
+        description: Hent alle registrerings-ID'er uden at specificere nogen start-
+          eller slutdato. | Specificér startdatoen for at hente registrerings-ID'er,
+          der er oprettet/redigeret, fra startdatoen og indtil nu. | Specificér slutdatoen
+          for at hente registrerings-ID'er, der er oprettet/redigeret, fra nu og indtil
+          slutdatoen. | Specificér startdatoen og slutdatoen for at hente registrerings-ID'er,
+          der er oprettet/redigeret, fra startdatoen og indtil slutdatoen.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/registreringQuery'
+      responses:
+        '200':
+          description: Liste af registering id'er tilhørende indberetter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/registrering'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/opdateringAfKontaktpersonensDetaljerForVirksomhed:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: updateKontaktpersonDetaljerVirksomhed
+      summary: Opdater detaljer om virksomheden, som er kontaktperson for dødsboet.
+      description: Dette kald giver en virksomhed, som er kontaktperson på dødsboet,
+        mulighed for at ændre detaljer for virksomheden. | Herunder telefonnummer,
+        email adresse, anden adresse, c/o adresse og virksomhedens reference.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kontaktpersonVirksomhedOpdatering'
+      responses:
+        '201':
+          description: Svar på opdateringen af kontaktpersonens detaljer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kontaktperson'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/opdateringAfKontaktpersonensDetaljerPerson:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: updateKontaktpersonDetaljerPerson
+      summary: Opdater detaljer om personen, som er kontaktperson for dødsboet.
+      description: Dette kald giver en person, som er kontaktperson på dødsboet, mulighed
+        for at ændre kontakoplysninger. | Det er kun muligt at ændre email og telefonnummer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kontaktoplysninger'
+      responses:
+        '201':
+          description: Svar på opdateringen af kontaktpersonens detaljer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kontaktperson'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      summary: Hent metadata om en dødsbojournal.
+      tags:
+      - doedsbojournal
+      operationId: getDoedsbo
+      responses:
+        '200':
+          description: Metadata om en dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/doedsbojournal'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/registreringer:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getRegistreringerForBruger
+      summary: Hent brugerens registreringer på én dødsbojournal.
+      description: Henter samlet de krav, tilgodehavender og forespørgsler på den
+        angivne dødsbojournal, som den autentificerede bruger har adgang til. Svaret
+        svarer til at kalde /krav, /tilgodehavender og /forespoergsler hver for sig.
+      responses:
+        '200':
+          description: Krav, tilgodehavender og forespørgsler på den angivne dødsbojournal,
+            som brugeren har adgang til.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/registreringerForBruger'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      summary: Hent metadata om en dødsbojournal.
+      tags:
+      - doedsbojournal
+      operationId: getDoedsboV2
+      responses:
+        '200':
+          description: Metadata om en dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/doedsbojournalV2'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/krav:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllKrav
+      summary: Hent liste af krav for en dødsbojournal.
+      responses:
+        '200':
+          description: Liste af anmeldte krav for dødsbojournalen.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addKrav
+      summary: Anmeld krav til en dødsbojournal.
+      deprecated: true
+      description: Dette er ikke den nyeste version af dette endepunkt. Dette endepunkt
+        vil være supporteret til og med 11-12-2024, og vil blive lukket ved første
+        release efter denne dato. Brug derfor det nye endepunkt </v2/doedsbojournaler/{doedsbojournalId}/krav>
+        i stedet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdatering'
+      responses:
+        '201':
+          description: Svar på anmeldelse af krav.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/personValidering:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: isValidPerson
+      summary: Tjekker om person med det angivne CPR-nummer og navn findes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/person'
+      responses:
+        '200':
+          description: Hvis personen med det angivne CPR-nummer og navn findes.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}/krav:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addKravV2
+      summary: Anmeld krav til en dødsbojournal.
+      description: I denne opdaterede version er det ikke længere muligt at oprette
+        på vegne af en anden med dansk adresse uden CPR-nummer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdatering'
+      responses:
+        '201':
+          description: Svar på anmeldelse af krav.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/krav/{kravId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/kravId'
+    get:
+      summary: Hent specifikt krav for dødsbojournal.
+      tags:
+      - doedsbojournal
+      operationId: getKrav
+      responses:
+        '200':
+          description: Krav fra dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater krav for dødsbojournal.
+      operationId: updateKrav
+      deprecated: true
+      description: Dette er ikke den nyeste version af dette endepunkt. Dette endepunkt
+        vil være supporteret til og med 11-12-2024, og vil blive lukket ved første
+        release efter denne dato. Brug derfor det nye endepunkt </v2/doedsbojournaler/{doedsbojournalId}/krav/{kravId}>
+        i stedet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af krav for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      summary: Slet krav for dødsbojournal.
+      operationId: deleteKrav
+      responses:
+        '200':
+          description: Svar på sletning af krav for dødsbojournal.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}/krav/{kravId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/kravId'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater krav for dødsbojournal.
+      description: I denne opdaterede version er det ikke længere muligt at oprette
+        på vegne af en anden med dansk adresse uden CPR-nummer.
+      operationId: updateKravV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kravOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af krav for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/krav'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/krav/{kravId}/bilag:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/kravId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllBilagForKrav
+      summary: Hent alle bilag for et givent krav.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addBilagToKrav
+      summary: Tilknyt bilag til krav.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/bilagNavn'
+      requestBody:
+        $ref: '#/components/requestBodies/tilknytBilagRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/bilagTilknyttetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/krav/{kravId}/bilag/{bilagId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/kravId'
+    - $ref: '#/components/parameters/bilagId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getBilagForKrav
+      summary: Hent specifikt bilag for et krav.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      operationId: deleteBilagForKrav
+      summary: Slet et bilag.
+      responses:
+        '200':
+          $ref: '#/components/responses/bilagSlettetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/tilgodehavender:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllTilgodehavender
+      summary: Hent liste af tilgodehavender for dødsbojournal.
+      responses:
+        '200':
+          description: Viser en liste af tilgodehavender.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      summary: Anmeld tilgodehavende til dødsbojournal.
+      operationId: addTilgodehavende
+      deprecated: true
+      description: Dette er ikke den nyeste version af dette endepunkt. Dette endepunkt
+        vil være supporteret til og med 11-12-2024, og vil blive lukket ved første
+        release efter denne dato. Brug derfor det nye endepunkt </v2/doedsbojournaler/{doedsbojournalId}/tilgodehavender>
+        i stedet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdatering'
+      responses:
+        '201':
+          description: Svar på anmeldelse af krav.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}/tilgodehavender:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    post:
+      tags:
+      - doedsbojournal
+      summary: Anmeld tilgodehavende til dødsbojournal.
+      description: I denne opdaterede version er det ikke længere muligt at oprette
+        på vegne af en anden med dansk adresse uden CPR-nummer.
+      operationId: addTilgodehavendeV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdatering'
+      responses:
+        '201':
+          description: Svar på anmeldelse af krav.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/tilgodehavender/{tilgodehavendeId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/tilgodehavendeId'
+    get:
+      tags:
+      - doedsbojournal
+      summary: Hent specifikt tilgodehavende for dødsbojournal.
+      operationId: getTilgodehavende
+      responses:
+        '200':
+          description: Tilgodenhavende for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater tilgodehavende for dødsbojournal.
+      operationId: updateTilgodehavende
+      deprecated: true
+      description: Dette er ikke den nyeste version af dette endepunkt. Dette endepunkt
+        vil være supporteret til og med 11-12-2024, og vil blive lukket ved første
+        release efter denne dato. Brug derfor det nye endepunkt </v2/doedsbojournaler/{doedsbojournalId}/tilgodehavender/{tilgodehavendeId}>
+        i stedet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af tilgodehavende for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      summary: Slet tilgodehavende for dødsbojournal.
+      operationId: deleteTilgodehavende
+      responses:
+        '200':
+          description: Svar på sletning af tilgodehavende for dædsbojournal.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}/tilgodehavender/{tilgodehavendeId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/tilgodehavendeId'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater tilgodehavende for dødsbojournal.
+      description: I denne opdaterede version er det ikke længere muligt at oprette
+        på vegne af en anden med dansk adresse uden CPR-nummer.
+      operationId: updateTilgodehavendeV2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tilgodehavendeOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af tilgodehavende for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tilgodehavende'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/tilgodehavender/{tilgodehavendeId}/bilag:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/tilgodehavendeId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllBilagForTilgodehavende
+      summary: Hent alle bilag for et givent tilgodehavende.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addBilagToTilgodehavende
+      summary: Tilknyt bilag til tilgodehavende.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/bilagNavn'
+      requestBody:
+        $ref: '#/components/requestBodies/tilknytBilagRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/bilagTilknyttetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/tilgodehavender/{tilgodehavendeId}/bilag/{bilagId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/tilgodehavendeId'
+    - $ref: '#/components/parameters/bilagId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getBilagForTilgodehavende
+      summary: Hent specifikt bilag for et tilgodehavende.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      operationId: deleteBilagForTilgodehavende
+      summary: Slet et bilag.
+      responses:
+        '200':
+          $ref: '#/components/responses/bilagSlettetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/proformaopgoerelser:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllProformaopgoerelser
+      summary: Hent liste af proformaopgørelser for dødsbojournal.
+      responses:
+        '200':
+          description: Viser en liste af proformaopgørelser.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/proformaopgoerelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      summary: Anmeld proformaopgørelse til dødsbojournal.
+      operationId: addProformaopgoerelse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/proformaopgoerelseOprettelse'
+      responses:
+        '201':
+          description: Svar på anmeldelse af proformaopgørelse.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/proformaopgoerelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/proformaopgoerelser/{proformaopgoerelseId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/proformaopgoerelseId'
+    get:
+      tags:
+      - doedsbojournal
+      summary: Hent specifikt proformaopgørelse for dødsbojournal.
+      operationId: getProformaopgoerelse
+      responses:
+        '200':
+          description: Proformaopgørelse for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/proformaopgoerelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater proformaopgørelse for dødsbojournal.
+      operationId: updateProformaopgoerelse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/proformaopgoerelseOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af proformaopgørelse for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/proformaopgoerelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      summary: Slet proformaopgørelse for dødsbojournal.
+      operationId: deleteProformaopgoerelse
+      responses:
+        '200':
+          description: Svar på sletning af proformaopgørelse for dødsbojournal.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/proformaopgoerelser/{proformaopgoerelseId}/bilag:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/proformaopgoerelseId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllBilagForProformaopgoerelse
+      summary: Hent alle bilag for et given proformaopgørelse.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addBilagToProformaopgoerelse
+      summary: Tilknyt bilag til proformaopgørelse.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/bilagNavn'
+      requestBody:
+        $ref: '#/components/requestBodies/tilknytBilagRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/bilagTilknyttetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/proformaopgoerelser/{proformaopgoerelseId}/bilag/{bilagId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/proformaopgoerelseId'
+    - $ref: '#/components/parameters/bilagId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getBilagForProformaopgoerelse
+      summary: Hent specifikt bilag for et proformaopgørelse.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      operationId: deleteBilagForProformaopgoerelse
+      summary: Slet et bilag.
+      responses:
+        '200':
+          $ref: '#/components/responses/bilagSlettetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/forespoergsler:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllForespoergsler
+      summary: Hent liste af forespørgsler for dødsbojournal.
+      responses:
+        '200':
+          description: Viser en liste af forespørgsler.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/forespoergsel'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      summary: Opret forespørgsel om information på kontaktperson for dødsbojournal.
+      operationId: addForespoergsel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/forespoergselOprettelse'
+      responses:
+        '201':
+          description: Svar på forespørgsel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forespoergsel'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/forespoergsler/{forespoergselId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/forespoergselId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getForespoergsel
+      summary: Hent specifik forespørgsel for dødsbojournal.
+      responses:
+        '200':
+          description: Viser forespørgsel om information på kontaktperson.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forespoergsel'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater forespørgsel om information på kontaktperson for dødsbojournal.
+      operationId: updateForespoergsel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/forespoergselOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af forespørgsel for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forespoergsel'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      summary: Slet forespørgsel om information på kontaktperson for dødsbojournal.
+      operationId: deleteForespoergsel
+      responses:
+        '200':
+          description: Svar på sletning af forespørgsel for dødsbojournal.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/forespoergsler/{forespoergselId}/bilag:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/forespoergselId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllBilagForForespoergsel
+      summary: Hent alle bilag for en given forespørgsel.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addBilagToForespoergsel
+      summary: Tilknyt bilag til forespørgsel.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/bilagNavn'
+      requestBody:
+        $ref: '#/components/requestBodies/tilknytBilagRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/bilagTilknyttetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/forespoergsler/{forespoergselId}/bilag/{bilagId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/forespoergselId'
+    - $ref: '#/components/parameters/bilagId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getBilagForForespoergsel
+      summary: Hent specifikt bilag for en forespørgsel.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      operationId: deleteBilagForForespoergsel
+      summary: Slet et bilag.
+      responses:
+        '200':
+          $ref: '#/components/responses/bilagSlettetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/effektfortegnelser:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllEffektfortegnelser
+      summary: Hent liste af effektfortegnelser for dødsbojournal.
+      responses:
+        '200':
+          description: Viser en liste af effektfortegnelser.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/effektfortegnelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      summary: Opret effektfortegnelse for dødsbojournal.
+      operationId: addEffektfortegnelse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/effektfortegnelseOpdatering'
+      responses:
+        '201':
+          description: Svar på effektfortegnelse.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/effektfortegnelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/effektfortegnelser/{effektfortegnelseId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/effektfortegnelseId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getEffektfortegnelse
+      summary: Hent specifik effektfortegnelse for dødsbojournal.
+      responses:
+        '200':
+          description: Viser effektfortegnelse.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/effektfortegnelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    put:
+      tags:
+      - doedsbojournal
+      summary: Opdater effektfortegnelse for dødsbojournal.
+      operationId: updateEffektfortegnelse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/effektfortegnelseOpdatering'
+      responses:
+        '200':
+          description: Svar på opdatering af effektfortegnelse for dødsbojournal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/effektfortegnelse'
+    delete:
+      tags:
+      - doedsbojournal
+      summary: Slet effektfortegnelse for dødsbojournal.
+      operationId: deleteEffektfortegnelser
+      responses:
+        '200':
+          description: Svar på sletning af effektfortegnelse for dødsbojournal.
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/effektfortegnelser/{effektfortegnelseId}/bilag:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/effektfortegnelseId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllBilagForEffektfortegnelse
+      summary: Hent alle bilag for et givent effektfortegnelse.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    post:
+      tags:
+      - doedsbojournal
+      operationId: addBilagToEffektfortegnelse
+      summary: Tilknyt bilag til effektfortegnelse.
+      parameters:
+      - in: header
+        required: true
+        name: Content-Disposition
+        schema:
+          $ref: '#/components/schemas/bilagNavn'
+      requestBody:
+        $ref: '#/components/requestBodies/tilknytBilagRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/bilagTilknyttetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/effektfortegnelser/{effektfortegnelseId}/bilag/{bilagId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/effektfortegnelseId'
+    - $ref: '#/components/parameters/bilagId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getBilagForEffektfortegnelse
+      summary: Hent specifikt bilag for et effektfortegnelse.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentBilagResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+    delete:
+      tags:
+      - doedsbojournal
+      operationId: deleteBilagForEffektfortegnelse
+      summary: Slet et bilag.
+      responses:
+        '200':
+          $ref: '#/components/responses/bilagSlettetResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/registrering/{registreringId}/beskeder:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/registreringId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getMessagesForRegistrering
+      summary: Hent liste af beskeder for en registrering.
+      responses:
+        '200':
+          description: Viser en liste af beskeder tilhørende registreringen.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/beskedReference'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/registrering/{registreringId}/kvittering:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/registreringId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllKvitteringForRegistrering
+      summary: Hent alle kvitteringer for et givent registrering.
+      deprecated: true
+      description: Dette er ikke den nyeste version af dette endepunkt. Dette endepunkt
+        vil være supporteret til og med 30-04-2024, og vil blive lukket ved første
+        release efter denne dato. Brug derfor det nye endepunkt </v2/doedsbojournaler/{doedsbojournalId}/registrering/{registreringId}/kvittering>
+        i stedet.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfKvitteringResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /v2/doedsbojournaler/{doedsbojournalId}/registrering/{registreringId}/kvittering:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/registreringId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getAllKvitteringForRegistreringV2
+      summary: Hent alle kvitteringer for et givent registrering.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentListAfKvitteringResponseV2'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/registrering/{registreringId}/kvittering/{kvitteringId}:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    - $ref: '#/components/parameters/registreringId'
+    - $ref: '#/components/parameters/kvitteringId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getKvitteringForRegistrering
+      summary: Hent specifikt kvittering for et registrering.
+      responses:
+        '200':
+          $ref: '#/components/responses/hentKvitteringResponse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+  /doedsbojournaler/{doedsbojournalId}/haendelser:
+    parameters:
+    - $ref: '#/components/parameters/doedsbojournalId'
+    get:
+      tags:
+      - doedsbojournal
+      operationId: getHaendelser
+      summary: Hent liste af hændelser for en dødsbojournal som kontaktperson.
+      responses:
+        '200':
+          description: Dette kald giver mulighed for at hente en liste af hændelser
+            for en dødsbojournal, som brugeren selv er kontaktperson for.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/haendelse'
+        default:
+          $ref: '#/components/responses/genericErrorResponse'
+security:
+- bearerAuth: [
+    ]
+components:
+  parameters:
+    doedsbojournalId:
+      name: doedsbojournalId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/id'
+      description: Id på dødsbojournal.
+    kravId:
+      name: kravId
+      in: path
+      required: true
+      description: Id på kravet.
+      schema:
+        $ref: '#/components/schemas/id'
+    tilgodehavendeId:
+      name: tilgodehavendeId
+      in: path
+      required: true
+      description: Id på tilgodehavende.
+      schema:
+        $ref: '#/components/schemas/id'
+    forespoergselId:
+      name: forespoergselId
+      in: path
+      required: true
+      description: Id på forespørgsel.
+      schema:
+        $ref: '#/components/schemas/id'
+    effektfortegnelseId:
+      name: effektfortegnelseId
+      in: path
+      required: true
+      description: Id på effektfortegnelse.
+      schema:
+        $ref: '#/components/schemas/id'
+    registreringId:
+      name: registreringId
+      in: path
+      required: true
+      description: Id på en registrering.
+      schema:
+        $ref: '#/components/schemas/id'
+    proformaopgoerelseId:
+      name: proformaopgoerelseId
+      in: path
+      required: true
+      description: Id på proformaopgørelse.
+      schema:
+        $ref: '#/components/schemas/id'
+    bilagId:
+      name: bilagId
+      in: path
+      required: true
+      description: Id på bilaget.
+      schema:
+        $ref: '#/components/schemas/id'
+    kvitteringId:
+      name: kvitteringId
+      in: path
+      required: true
+      description: Id på kvitteringen.
+      schema:
+        $ref: '#/components/schemas/id'
+    page:
+      name: page
+      description: Side for paginering.
+      required: false
+      in: query
+      schema:
+        type: integer
+    size:
+      name: size
+      description: Antal elementer pr. side.
+      required: false
+      in: query
+      schema:
+        type: integer
+    sort:
+      name: sort
+      description: Liste af felter der skal sorteres på.
+      required: false
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+    direction:
+      name: direction
+      description: Stigende eller faldende retning for søgeresultater.
+      in: query
+      schema:
+        $ref: '#/components/schemas/directionEnum'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    udenlandskadresseQuery:
+      description: Query parameter for udenlandsk adresse.
+      required:
+      - by
+      - landekode
+      properties:
+        by:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    registrering:
+      required:
+      - id
+      - doedsbojournalId
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        doedsbojournalId:
+          $ref: '#/components/schemas/id'
+    registreringQuery:
+      required:
+      - registreringType
+      properties:
+        startdato:
+          type: string
+          format: date
+        slutdato:
+          type: string
+          format: date
+        registreringType:
+          description: Registrering type.
+          type: string
+          enum:
+          - krav
+          - tilgodehavende
+    registreringerForBruger:
+      description: Krav, tilgodehavender, forespørgsler og effektfortegnelser på en
+        dødsbojournal, som brugeren har adgang til.
+      required:
+      - krav
+      - tilgodehavender
+      - forespoergsler
+      - effektfortegnelser
+      properties:
+        krav:
+          type: array
+          items:
+            $ref: '#/components/schemas/krav'
+        tilgodehavender:
+          type: array
+          items:
+            $ref: '#/components/schemas/tilgodehavende'
+        forespoergsler:
+          type: array
+          items:
+            $ref: '#/components/schemas/forespoergsel'
+        effektfortegnelser:
+          type: array
+          items:
+            $ref: '#/components/schemas/effektfortegnelse'
+    kravOpdatering:
+      description: Oprettelse eller opdatering af krav.
+      required:
+      - beloeb
+      - endeligt
+      properties:
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        gebyrOgRente:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        endeligt:
+          type: boolean
+        begravelsesudgift:
+          type: boolean
+          default: false
+        opgjortdato:
+          type: string
+          format: date
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        sikkerhed:
+          $ref: '#/components/schemas/sikkerhed'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        tredjepart:
+          $ref: '#/components/schemas/tredjepart'
+    krav:
+      description: Indberettet krav.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - beloeb
+      - endeligt
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          $ref: '#/components/schemas/part'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        gebyrOgRente:
+          $ref: '#/components/schemas/positivtDecimaltalEllerNul'
+        endeligt:
+          type: boolean
+        begravelsesudgift:
+          type: boolean
+          default: false
+        opgjortdato:
+          type: string
+          format: date
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          description: Reference som indberetter bruger til at identificere kravet.
+          type: string
+          maxLength: 200
+        rettidigt:
+          description: Sættes af systemet og angiver om kravet blev indsendt inden
+            for proklamafristen.
+          type: boolean
+        sikkerhed:
+          $ref: '#/components/schemas/sikkerhed'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        harBilag:
+          $ref: '#/components/schemas/harBilag'
+        kvittering:
+          $ref: '#/components/schemas/kvittering'
+        modtagelsesdato:
+          type: string
+          format: date
+        tredjepart:
+          $ref: '#/components/schemas/tredjepart'
+    tilgodehavendeOpdatering:
+      description: Oprettelse eller opdatering af tilgodehavende.
+      required:
+      - beloeb
+      - udbetalt
+      properties:
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        udbetalt:
+          type: boolean
+        udbetaltdato:
+          type: string
+          format: date
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        tredjepart:
+          $ref: '#/components/schemas/tredjepart'
+    proformaopgoerelseOpdatering:
+      description: Opdatering af proformaopgørelse.
+      properties:
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+    proformaopgoerelseOprettelse:
+      description: Oprettelse af proformaopgørelse.
+      required:
+      - bekraeftet
+      properties:
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        bekraeftet:
+          type: boolean
+          description: Jeg er bekendt med, at krav mod afdøde, som banken vil gøre
+            gældende over for boet, skal anmeldes under 'Anmeld et krav', der findes
+            under 'Boets oversigt'.
+    tilgodehavende:
+      description: Indberettet tilgodehavende.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - beloeb
+      - udbetalt
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          $ref: '#/components/schemas/part'
+        beloeb:
+          $ref: '#/components/schemas/positivtDecimaltal'
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        udbetalt:
+          type: boolean
+        udbetaltdato:
+          type: string
+          format: date
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        harBilag:
+          $ref: '#/components/schemas/harBilag'
+        kvittering:
+          $ref: '#/components/schemas/kvittering'
+        tredjepart:
+          $ref: '#/components/schemas/tredjepart'
+    proformaopgoerelse:
+      description: Indberettet proformaopgørelse.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - bekraeftelsesBeskrivelse
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          $ref: '#/components/schemas/part'
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        harBilag:
+          $ref: '#/components/schemas/harBilag'
+        kvittering:
+          $ref: '#/components/schemas/kvittering'
+        bekraeftelsesBeskrivelse:
+          type: string
+    doedsbojournal:
+      description: Informationer om et dødsbo, såsom afdøde, bobehandlingsform og
+        kontaktperson.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        sksNummer:
+          type: string
+        sagsnummer:
+          $ref: '#/components/schemas/doedsbojournalSagsnummer'
+        sagId:
+          description: ID på sagen i Skifteportalen. Hvis ID'et mangler er det en
+            sag som ikke findes i Skifteportalen.
+          type: string
+          format: UUID
+        afdoede:
+          description: Oplysninger om afdøde med enten dansk eller udenlandsk adresse.
+            Begge adresser kan være udeladt ved adressebeskyttelse.
+          type: object
+          properties:
+            personId:
+              $ref: '#/components/schemas/id'
+            navn:
+              type: string
+            foedselsdato:
+              type: string
+              format: date
+            adresse:
+              $ref: '#/components/schemas/darAdresse'
+            udenlandskAdresse:
+              $ref: '#/components/schemas/fritekstadresse'
+            erNavnAdresseBeskyttet:
+              type: boolean
+        retskredsId:
+          $ref: '#/components/schemas/retskredsId'
+        skifteform:
+          $ref: '#/components/schemas/skifteformEnum'
+        sagsbehandler:
+          type: string
+        kontaktperson:
+          $ref: '#/components/schemas/kontaktperson'
+        vigtigeDatoer:
+          $ref: '#/components/schemas/vigtigeDatoer'
+        erBoetUdleveret:
+          type: boolean
+          description: Viser om boet er udleveret. Felter som 'skifteform' og 'kontaktperson'
+            kan være blanke trods udlevering hvis oplysningerne ikke må vises.
+    doedsbojournalV2:
+      description: Informationer om et dødsbo, såsom afdøde, bobehandlingsform og
+        kontaktperson.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        sksNummer:
+          type: string
+        sagsnummer:
+          $ref: '#/components/schemas/doedsbojournalSagsnummer'
+        sagId:
+          description: ID på sagen i Skifteportalen. Hvis ID'et mangler er det en
+            sag som ikke findes i Skifteportalen.
+          type: string
+          format: UUID
+        afdoede:
+          description: Oplysninger om afdøde med enten dansk eller udenlandsk adresse.
+            Begge adresser kan være udeladt ved adressebeskyttelse.
+          type: object
+          properties:
+            personId:
+              $ref: '#/components/schemas/id'
+            navn:
+              type: string
+            foedselsdato:
+              type: string
+              format: date
+            adresse:
+              $ref: '#/components/schemas/struktureretDanskAdresse'
+            udenlandskAdresse:
+              $ref: '#/components/schemas/fritekstadresse'
+            erNavnAdresseBeskyttet:
+              type: boolean
+        retskredsId:
+          $ref: '#/components/schemas/retskredsId'
+        skifteform:
+          $ref: '#/components/schemas/skifteformEnum'
+        sagsbehandler:
+          type: string
+        kontaktperson:
+          $ref: '#/components/schemas/kontaktperson'
+        vigtigeDatoer:
+          $ref: '#/components/schemas/vigtigeDatoer'
+        erBoetUdleveret:
+          type: boolean
+          description: Viser om boet er udleveret. Felter som 'skifteform' og 'kontaktperson'
+            kan være blanke trods udlevering hvis oplysningerne ikke må vises.
+    doedsbojournalQuery:
+      description: Struktur til søgning efter dødsbojournaler.
+      properties:
+        cprNummer:
+          $ref: '#/components/schemas/cprNummer'
+        navn:
+          description: Navn på afdøde. Mindst eet korrekt fornavn efterfulgt af afdødes
+            efternavn.
+          type: string
+          maxLength: 200
+          pattern: .+ .+
+        darId:
+          $ref: '#/components/schemas/id'
+        udenlandskAdresse:
+          $ref: '#/components/schemas/udenlandskadresseQuery'
+    doedsbojournalAendringer:
+      description: Struktur til at efterspørge dødsbojournaler med ændringer.
+      required:
+      - aendretEfter
+      - boIder
+      properties:
+        aendretEfter:
+          type: string
+          format: date-time
+        boIder:
+          description: List af ID'er på boer som skal søges efter.
+          type: array
+          maxItems: 1000
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/id'
+    doedsbojournalAendringerKontaktperson:
+      description: Struktur til at efterspørge dødsbojournaler, som man er kontaktperson
+        på, med ændringer.
+      required:
+      - aendretEfter
+      properties:
+        aendretEfter:
+          type: string
+          format: date-time
+    kontaktpersonVirksomhedOpdatering:
+      description: Oplysninger om kontaktpersonens detaljer herunder yderligere kontaktoplysninger,
+        anden adresse samt virksomhedens reference.
+      properties:
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        virksomhedensReference:
+          type: string
+          maxLength: 200
+          description: Virksomhedens reference-/journalnummer, kan kun angives når
+            kontaktperson er en virksomhed.
+    forespoergselOprettelse:
+      description: Oprettelse af forespørgsler.
+      required:
+      - begrundelse
+      - bekraeftet
+      properties:
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        begrundelse:
+          $ref: '#/components/schemas/begrundelseForForespoergselEnum'
+        begrundelseAnden:
+          type: string
+          maxLength: 1200
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        bekraeftet:
+          type: boolean
+          description: Jeg bekræfter, at min forespørgsel ikke involverer en opkrævning
+            til boet. Jeg er bekendt med, at krav mod afdøde, som jeg vil gøre gældende
+            over for boet, skal anmeldes under ‘Anmeld et krav’, der findes under
+            ‘Boets oversigt’.
+    forespoergselOpdatering:
+      description: Opdatering af forespørgsler.
+      required:
+      - begrundelse
+      properties:
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        begrundelse:
+          $ref: '#/components/schemas/begrundelseForForespoergselEnum'
+        begrundelseAnden:
+          type: string
+          maxLength: 1200
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+    forespoergsel:
+      description: Indsendt forespørgsel.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - forespoerger
+      - begrundelse
+      - status
+      - bekraeftelsesBeskrivelse
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        forespoerger:
+          $ref: '#/components/schemas/part'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        begrundelse:
+          $ref: '#/components/schemas/begrundelseForForespoergselEnum'
+        begrundelseAnden:
+          type: string
+          maxLength: 1200
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/forespoergselsstatusEnum'
+        bekraeftelsesBeskrivelse:
+          type: string
+        harBilag:
+          $ref: '#/components/schemas/harBilag'
+        kvittering:
+          $ref: '#/components/schemas/kvittering'
+    effektfortegnelseOpdatering:
+      description: Oprettelse eller opdatering af effektfortegnelse.
+      properties:
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        effekter:
+          type: array
+          items:
+            $ref: '#/components/schemas/effekt'
+        kontanter:
+          $ref: '#/components/schemas/beloeb'
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+    effektfortegnelse:
+      description: Indsendt effektfortegnelse.
+      required:
+      - id
+      - oprettelsestidspunkt
+      - redigeringstidspunkt
+      - indberetter
+      - harBilag
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        oprettelsestidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        redigeringstidspunkt:
+          $ref: '#/components/schemas/redigeringstidspunkt'
+        indberetter:
+          $ref: '#/components/schemas/part'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        effekter:
+          type: array
+          items:
+            $ref: '#/components/schemas/effekt'
+        kontanter:
+          $ref: '#/components/schemas/beloeb'
+        bemaerkninger:
+          type: string
+          maxLength: 1200
+        reference:
+          type: string
+          maxLength: 200
+        harBilag:
+          $ref: '#/components/schemas/harBilag'
+        kvittering:
+          $ref: '#/components/schemas/kvittering'
+    harBilag:
+      type: boolean
+    person:
+      required:
+      - cprNummer
+      - navn
+      properties:
+        cprNummer:
+          $ref: '#/components/schemas/cprNummer'
+        navn:
+          type: string
+    doedsbojournalSagsnummer:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Sagsnummer for dødsbojournal sag.
+      properties:
+        prefix:
+          type: string
+          enum:
+          - SK
+          - SKS
+        loebenummerAarstal:
+          type: string
+          description: Løbenummer og årstal, fx "123/2025".
+        kompletSagsnummer:
+          type: string
+          description: Det fulde sagsnummer sammensat af prefix, løbenummer og årstal
+            fx "SK 123/2025".
+    personCprReference:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Reference til person med CPR-nr. og dansk bopæl.
+      required:
+      - cprNummer
+      - navn
+      properties:
+        cprNummer:
+          $ref: '#/components/schemas/cprNummer'
+        navn:
+          type: string
+        erNavnAdresseBeskyttet:
+          description: Er person navne- og adressebeskyttelse (Denne parameter bliver
+            ignoreret ved anmodninger!).
+          type: boolean
+        danskAdresse:
+          $ref: '#/components/schemas/danskAdresse'
+    kvittering:
+      required:
+      - id
+      - kode
+      - overskrift
+      - indhold
+      - afsendtAf
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Kvittering for registrering.
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+          description: Id som bruges til at hente den detaljeret version af kvitteringen
+            i PDF format.
+        kode:
+          type: string
+        overskrift:
+          type: string
+        indhold:
+          type: string
+        afsendtAf:
+          type: string
+          description: Embedskode til den ret kvittering er afsendt af.
+    kontaktoplysninger:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Kontaktoplysninger (email adresse og/eller telefonnummer) for en
+        person eller virksomhed.
+      properties:
+        telefonnummer:
+          $ref: '#/components/schemas/telefonnummer'
+        email:
+          $ref: '#/components/schemas/email'
+    andenAdresse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Evt. anden adresse for en person eller virksomhed.
+      required:
+      - danskAdresse
+      properties:
+        careOf:
+          type: string
+          maxLength: 200
+        danskAdresse:
+          $ref: '#/components/schemas/danskAdresse'
+    kontaktperson:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Oplysninger om kontaktperson herunder type (part), eventuelle yderligere
+        kontaktoplysninger, anden adresse og navn på kontaktperson i virksomheden.
+      required:
+      - part
+      properties:
+        part:
+          $ref: '#/components/schemas/part'
+        kontaktoplysninger:
+          $ref: '#/components/schemas/kontaktoplysninger'
+        andenAdresse:
+          $ref: '#/components/schemas/andenAdresse'
+        navnPaaVirksomhedensKontaktperson:
+          type: string
+          maxLength: 200
+          description: Navn på virksomhedens kontaktperson, skal/kan kun angives når
+            kontaktperson er en virksomhed.
+        virksomhedensReference:
+          type: string
+          maxLength: 200
+          description: Virksomhedens reference-/journalnummer, kan kun angives når
+            kontaktperson er en virksomhed.
+    tredjepart:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Tredjepart for krav (kreditor) og tilgodehavender (debitor).
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/tredjepartTypeEnum'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        person:
+          $ref: '#/components/schemas/personCprReference'
+        anden:
+          $ref: '#/components/schemas/fritekstPart'
+    sikkerhed:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Sikkerhed for et krav (pant eller ejendomsforbehold).
+      required:
+      - sikkerhedsform
+      properties:
+        sikkerhedsform:
+          $ref: '#/components/schemas/sikkerhedsformEnum'
+        pantTekst:
+          maxLength: 500
+          type: string
+    vigtigeDatoer:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Frister og vigtige datoer for dødsboet.
+      properties:
+        doedsdato:
+          type: string
+          format: date
+        boUdleveret:
+          type: string
+          format: date
+        proklamaIndrykket:
+          type: string
+          format: date
+        proklamafristUdloebet:
+          type: string
+          format: date
+        fristForOpdateringAfForeloebigeKrav:
+          type: string
+          format: date
+    sikkerhedsformEnum:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Type af sikkerhed for et krav.
+      type: string
+      enum:
+      - PANT
+      - EJENDOMSFORBEHOLD
+    skifteformEnum:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Type af skifteform.
+      type: string
+      enum:
+      - BOUDLAEG
+      - FORENKLET_PRIVAT_SKIFTE_PARAGRAF_33
+      - FORENKLET_PRIVAT_SKIFTE_PARAGRAF_34
+      - PRIVAT_SKIFTE
+      - USKIFTET_BO
+      - AEGTEFAELLEUDLAEG
+      - SOLVENT_BOBESTYRERBO
+      - INSOLVENT_BOBESTYRERBO
+    forespoergselsstatusEnum:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Status på forespørgsel.
+      type: string
+      enum:
+      - AFVENTER
+      - GODKENDT
+      - AFVIST
+    begrundelseForForespoergselEnum:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Begrundelse (type) for forespørgslen.
+      type: string
+      enum:
+      - OPSIGELSE_AF_FORSIKRING
+      - OPSIGELSE_AF_ABONNEMENT
+      - RYDNING_AF_BOLIG
+      - TILBAGELEVERING_AF_EFFEKTER
+      - ANDET
+    tredjepartTypeEnum:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Type af tredjepart, virksomhed (CVR-nummer), Person (cpr-nummer)
+        eller anden (fritekst part givet ved navn og adresse).
+      type: string
+      enum:
+      - VIRKSOMHED
+      - PERSON
+      - ANDEN
+    effekt:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Typen af en effekt givet ved en textuel beskrivelse (kategori)
+        og et antal.
+      example: 2 nøgler, 1 pung, mm.
+      required:
+      - kategori
+      - antal
+      properties:
+        kategori:
+          type: string
+          minLength: 1
+          maxLength: 200
+        antal:
+          type: integer
+          minimum: 1
+    bilagMetadata:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Metadata for et bilag.
+      required:
+      - id
+      - filename
+      - location
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        filename:
+          type: string
+          maxLength: 204
+        location:
+          type: string
+    kvitteringMetadata:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Metadata for et kvittering.
+      required:
+      - id
+      - filename
+      - location
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        filename:
+          type: string
+          maxLength: 204
+        location:
+          type: string
+    kvitteringMetadataV2:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Metadata for et kvittering.
+      required:
+      - id
+      - filename
+      - location
+      - afsendtAf
+      - dato
+      - oprettelsesTidspunkt
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        filename:
+          type: string
+          maxLength: 204
+        location:
+          type: string
+        afsendtAf:
+          type: string
+          description: Embedskode til den ret kvittering er afsendt af.
+        dato:
+          type: string
+          format: date
+        oprettelsesTidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+    bilagNavn:
+      type: string
+      pattern: ^(attachment; )?filename="[\w-_æøåÆØÅ()]+[\w\s-_æøåÆØÅ()]{1,200}\.[pP][dD][fF]"$
+      description: Formatet for navnet på et bilag.
+      example: filename="dokumentation.pdf"
+    bilagNavnOgOutputType:
+      type: string
+      pattern: ^attachment; filename="[\w-_æøåÆØÅ()]+[\w\s-_æøåÆØÅ()]{1,200}\.[pP][dD][fF]"$
+      description: Formatet for navnet på et bilag.
+      example: attachment; filename="dokumentation.pdf"
+    kvitteringNavnOgOutputType:
+      type: string
+      pattern: ^attachment; filename="[\w-_æøåÆØÅ()]+[\w\s-_æøåÆØÅ()]{1,200}\.[pP][dD][fF]"$
+      description: Formatet for navnet på et kvittering.
+      example: attachment; filename="dokumentation.pdf"
+    beskedReference:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Reference til beskeden.
+      required:
+      - beskedId
+      properties:
+        beskedId:
+          type: string
+          description: Id på beskeden.
+    haendelse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      required:
+      - tidspunkt
+      - beskrivelse
+      properties:
+        tidspunkt:
+          $ref: '#/components/schemas/oprettelsestidspunkt'
+        beskrivelse:
+          type: string
+        opdateretAf:
+          $ref: '#/components/schemas/aktoer'
+    aktoer:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      required:
+      - navn
+      - id
+      properties:
+        navn:
+          type: string
+        id:
+          type: string
+    directionEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - ASC
+      - DESC
+    danskAdresse:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common
+      required:
+      - adresselinje
+      - postnummer
+      - by
+      properties:
+        adresselinje:
+          type: string
+          maxLength: 255
+        postnummer:
+          type: string
+          maxLength: 4
+        by:
+          type: string
+          maxLength: 255
+    darAdresse:
+      deprecated: true
+      x-namespace: dk.domstol.oas.common
+      description: Repræsentation af adresse fra Dansk Adresse Register (DAR).
+      required:
+      - id
+      - adresselinje
+      - postnummer
+      - by
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        by:
+          type: string
+        retskredsId:
+          $ref: '#/components/schemas/retskredsId'
+    landekodeEnum:
+      x-namespace: dk.domstol.oas.common
+      type: string
+      enum:
+      - AF
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - AR
+      - AM
+      - AW
+      - AZ
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BY
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - IO
+      - VG
+      - BN
+      - BG
+      - BF
+      - BI
+      - KH
+      - CM
+      - CA
+      - KY
+      - CF
+      - CL
+      - CC
+      - CO
+      - KM
+      - CD
+      - CG
+      - CK
+      - CR
+      - CU
+      - CW
+      - CY
+      - DK
+      - DJ
+      - DM
+      - DO
+      - EC
+      - EG
+      - SV
+      - CI
+      - ER
+      - EE
+      - SZ
+      - ET
+      - FK
+      - FJ
+      - PH
+      - FI
+      - AE
+      - FR
+      - GF
+      - PF
+      - TF
+      - FO
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - JE
+      - JO
+      - CX
+      - CV
+      - KZ
+      - KE
+      - CN
+      - KG
+      - KI
+      - HR
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NL
+      - NP
+      - NZ
+      - NI
+      - NE
+      - NG
+      - NU
+      - KP
+      - MK
+      - MP
+      - NF
+      - 'NO'
+      - NC
+      - OM
+      - PK
+      - PW
+      - PS
+      - PA
+      - PG
+      - PY
+      - PE
+      - PN
+      - PL
+      - PT
+      - PR
+      - QA
+      - RE
+      - RO
+      - RU
+      - RW
+      - SB
+      - WS
+      - SM
+      - ST
+      - SA
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - SG
+      - BL
+      - SH
+      - KN
+      - LC
+      - SX
+      - PM
+      - VC
+      - SK
+      - SI
+      - SO
+      - ES
+      - LK
+      - MF
+      - GB
+      - SD
+      - SR
+      - SJ
+      - SE
+      - ZA
+      - GS
+      - KR
+      - SS
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TD
+      - TH
+      - CZ
+      - TG
+      - TK
+      - TO
+      - TT
+      - TN
+      - TM
+      - TC
+      - TV
+      - TR
+      - DE
+      - UG
+      - UA
+      - HU
+      - UY
+      - US
+      - UM
+      - UZ
+      - VU
+      - VA
+      - VE
+      - EH
+      - VN
+      - WF
+      - YE
+      - ZM
+      - ZW
+      - GQ
+      - AT
+      - TL
+      - AX
+    struktureretDanskAdresse:
+      description: Dansk struktureret adresse.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje
+      - postnummer
+      - postdistrikt
+      properties:
+        darId:
+          $ref: '#/components/schemas/id'
+        adresselinje:
+          type: string
+        postnummer:
+          type: string
+        postdistrikt:
+          description: Navnet på postnummeret. Dette fremstilles typisk som sidste
+            led, fx 2630 Taastrup.
+          type: string
+        supplerendeBynavn:
+          description: 'Optionelt felt - typisk landsbyens navn eller andet lokalt
+            stednavn der er fastsat af kommunen for at præcisere adressens beliggenhed
+            indenfor postnummeret. Indgår som en del af den officielle adressebetegnelse.
+            Indtil 34 tegn. Eksempel: ”Sønderholm”.'
+          type: string
+          maxLength: 34
+    fritekstadresse:
+      description: Danske eller udenlandsk adresse i fritekstform.
+      x-namespace: dk.domstol.oas.common.adressev2
+      required:
+      - adresselinje1
+      properties:
+        adresselinje1:
+          type: string
+          maxLength: 200
+        adresselinje2:
+          type: string
+          maxLength: 200
+        adresselinje3:
+          type: string
+          maxLength: 200
+        adresselinje4:
+          type: string
+          maxLength: 200
+        adresselinje5:
+          type: string
+          maxLength: 200
+        landekode:
+          $ref: '#/components/schemas/landekodeEnum'
+    id:
+      type: string
+      format: uuid
+    cprNummer:
+      type: string
+      pattern: ^\d{10}$
+    cvrNummer:
+      type: string
+      pattern: ^[1-9][0-9]{7}$
+    email:
+      type: string
+      format: email
+      maxLength: 128
+    retskredsId:
+      description: Unikt ID for en given retskreds, der kan anvendes til identificering
+        af en specifik retskreds i retskreds-service.
+      type: string
+      pattern: ^\d{4}$
+    telefonnummer:
+      type: string
+      pattern: ^\+?\d*$
+      maxLength: 20
+    oprettelsestidspunkt:
+      type: string
+      format: date-time
+    redigeringstidspunkt:
+      type: string
+      format: date-time
+    beloeb:
+      type: number
+    positivtDecimaltal:
+      type: number
+      minimum: 0.01
+    positivtDecimaltalEllerNul:
+      type: number
+      minimum: 0
+    apiError:
+      x-namespace: dk.domstol.oas.common
+      required:
+      - code
+      - status
+      - message
+      - path
+      - timestamp
+      properties:
+        code:
+          description: Human readable HTTP status message.
+          type: integer
+        status:
+          description: HTTP status code.
+          type: integer
+        message:
+          description: Message describing the error.
+          type: string
+        path:
+          description: The path of the error.
+          type: string
+        timestamp:
+          description: Date and time of the error.
+          type: string
+          format: date-time
+        details:
+          description: Detailed description of the error(s).
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+        errorDetails:
+          description: Detailed description of the error(s).
+          type: array
+          items:
+            $ref: '#/components/schemas/details'
+    details:
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+    partTypeEnum:
+      x-namespace: dk.domstol.oas.common
+      description: Type af part. Person givet ved CPR-nummer, virksomhed givet ved
+        CVR-nummer eller udenlandsk virksomhed eller person.
+      type: string
+      enum:
+      - PERSON
+      - VIRKSOMHED
+      - UDENLANDSK
+    part:
+      x-namespace: dk.domstol.oas.common
+      description: Part givet ved typen (person, virksomhed eller udenlandsk) og de
+        tilhørende underelementer for typen.
+      required:
+      - type
+      properties:
+        type:
+          $ref: '#/components/schemas/partTypeEnum'
+        virksomhed:
+          $ref: '#/components/schemas/virksomhedReference'
+        person:
+          $ref: '#/components/schemas/personReference'
+        udenlandsk:
+          $ref: '#/components/schemas/fritekstPart'
+    personReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til person som har og kan identificeres med et CPR-nr.
+      required:
+      - personId
+      properties:
+        personId:
+          $ref: '#/components/schemas/id'
+    virksomhedReference:
+      x-namespace: dk.domstol.oas.common
+      description: Reference til virksomhed.
+      required:
+      - cvrNummer
+      properties:
+        cvrNummer:
+          $ref: '#/components/schemas/cvrNummer'
+    fritekstPart:
+      x-namespace: dk.domstol.oas.common
+      description: Fritekst part (person) givet ved et navn og en adresse. Benyttes
+        når personen ikke har et CPR-nr.
+      required:
+      - navn
+      - adresse
+      properties:
+        navn:
+          type: string
+          maxLength: 200
+        adresse:
+          $ref: '#/components/schemas/fritekstadresse'
+  headers:
+    totalCount:
+      description: Det totale antal resultater i listen.
+      schema:
+        type: integer
+  responses:
+    bilagTilknyttetResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Bilaget er blevet tilknyttet resourcen.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bilagMetadata'
+    hentBilagResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Bilaget returneres binært. Navnet findes i "Content-Disposition"-headeren.
+      headers:
+        Content-disposition:
+          description: Navnet på bilaget.
+          required: true
+          schema:
+            $ref: '#/components/schemas/bilagNavnOgOutputType'
+      content:
+        application/pdf:
+          schema:
+            description: PDF'ens binære indhold returneres.
+            type: string
+            format: binary
+    hentListAfBilagResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Liste af bilag for resourcen. Højest 20 bilag pr. krav.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/bilagMetadata'
+            maxItems: 20
+    bilagSlettetResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Bilaget er slettet.
+    hentKvitteringResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Kvitteringen returneres binært. Navnet findes i "Content-Disposition"-headeren.
+      headers:
+        Content-disposition:
+          description: Navnet på kvitteringen.
+          required: true
+          schema:
+            $ref: '#/components/schemas/kvitteringNavnOgOutputType'
+      content:
+        application/pdf:
+          schema:
+            description: PDF'ens binære indhold returneres.
+            type: string
+            format: binary
+    hentListAfKvitteringResponse:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Liste af kvittering for resourcen.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/kvitteringMetadata'
+            maxItems: 20
+    hentListAfKvitteringResponseV2:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Liste af kvittering for resourcen.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/kvitteringMetadataV2'
+            maxItems: 20
+    genericErrorResponse:
+      description: Svar ved fejl.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiError'
+  requestBodies:
+    tilknytBilagRequest:
+      x-namespace: dk.domstol.oas.common.doedsbojournal
+      description: Upload af bilag.
+      required: true
+      content:
+        application/pdf:
+          schema:
+            description: PDF'ens binære indhold oversendes.
+            type: string
+            format: binary
