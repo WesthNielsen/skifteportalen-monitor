@@ -13,7 +13,9 @@ på at fjerne følsomme oplysninger såsom adgangsnøgler (secrets) inden materi
 Total fejl i adgang til miljøet? Ja: ☐ Nej: ☐
 I hvilken portal findes fejlen? Skifteportalen:
 Dødsbobehandling: ☐
-Tvangsopløsning: ☐
+Insolvenssager, tvangsopløsnings-
+sager og andre sager efter selskabs-
+loven samt ægtefælleskifte: ☐
 Straffesagsportalen: ☐
 Anvendt Client ID: [Client ID]
 Beskriv fejlen nærmere og
