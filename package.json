@@ -13,7 +13,8 @@
     "start": "bun dist/index.js",
     "check": "bun --bun tsc --noEmit && bun --bun tsc -p tsconfig.test.json",
     "test": "bun test",
-    "check:live": "bun src/live-check.ts"
+    "check:live": "bun src/live-check.ts",
+    "diff": "bun src/diff.ts"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

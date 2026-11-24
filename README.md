@@ -152,6 +152,24 @@ or Discord messages:
 bun run check:live
 ```
 
+Compare changed monitored documents in VS Code's diff viewer, without
+switching branches:
+
+```sh
+bun run diff
+```
+
+This fetches the `monitor-state` branch, takes its most recent commit that
+changed `.monitor-state/documents/`, and opens an old/new VS Code diff for
+every changed document. Documents republished at a new URL (for example
+`sagshylde-dist-oas-255` to `sagshylde-dist-oas-320`) are matched to a
+predecessor by name; when several predecessors are plausible, an interactive
+prompt lets you choose (documents whose link was removed in the same update
+are suggested first). Pass a commit hash from the `monitor-state` history to
+inspect an older update: `bun run diff <commit>`. The extracted files are
+written to a temporary folder; the diffs are textual and do not assess API
+compatibility.
+
 To run the actual monitor locally, copy [.env.example](./.env.example) to `.env`,
 set the Discord webhook and repository name, and provide a fine-grained GitHub
 token scoped to that repository with **Contents: read and write** permission as
