@@ -1,6 +1,6 @@
 # Skifteportalen API change monitor
 
-A once-daily GitHub Actions job that sends Discord notifications when Skifteportalen's
+A scheduled GitHub Actions job that sends Discord notifications when Skifteportalen's
 [API documentation page](https://domstoldk.euwest01.umbraco.io/selvbetjening/blanketter-og-vejledninger/minskiftesagdk/api-tilslutning-til-skifteportalen/)
 or its linked documents change.
 
@@ -34,9 +34,10 @@ comparisons.
 ## Run on GitHub Actions
 
 The workflow in [monitor.yml](./.github/workflows/monitor.yml) runs daily at
-**07:07 UTC** (08:07 CET in winter, 09:07 CEST in summer) and can also be started
-manually from the repository's **Actions** tab. GitHub scheduled workflows use
-UTC and may be delayed during busy periods, so this is not an exact-time alerting
+**07:07 UTC** (08:07 CET in winter, 09:07 CEST in summer) and **15:07 UTC**
+(16:07 CET in winter, 17:07 CEST in summer). It can also be started manually
+from the repository's **Actions** tab. GitHub scheduled workflows use UTC and
+may be delayed during busy periods, so this is not an exact-time alerting
 service.
 
 1. Push this project to a GitHub repository. A public repository is eligible for
