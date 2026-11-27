@@ -3,7 +3,7 @@ name: Skifteportalen monitor
 on:
   schedule:
     - cron: "7 7 * * *"
-    - cron: "7 15 * * *"
+    - cron: "7 14 * * *"
   workflow_dispatch:
 
 permissions:
